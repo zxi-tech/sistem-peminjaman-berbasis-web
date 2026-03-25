@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('transactions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->date('start_date');
+            $table->date('end_date')->nullable();
+            
+            // 👇 INI DIA LACI YANG HILANG! Kita tambahkan di sini 👇
+            $table->text('purpose');
+            
+            $table->enum('status', ['menunggu', 'dipinjam', 'selesai', 'ditolak', 'terlambat'])->default('menunggu');
+            $table->text('notes')->nullable();
+            $table->date('last_reminder_sent_at')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('transactions');
+    }
+};
