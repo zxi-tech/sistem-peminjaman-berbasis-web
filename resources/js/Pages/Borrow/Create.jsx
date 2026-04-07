@@ -120,30 +120,91 @@ export default function Create({ auth, items }) {
 
             <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20 text-gray-800 selection:bg-[#00A651] selection:text-white">
 
-                {/* NAVBAR (SAMA SEPERTI SEBELUMNYA) */}
+                {/* Navbar */}
                 <nav className="w-full bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-                    <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                    <div className="max-w-[1536px] mx-auto flex items-center justify-between px-6 lg:px-12 xl:px-20 py-4">
+
+                        {/* Logo */}
                         <div className="flex items-center">
-                            <img src="/images/logo-pertamina-pge.png" alt="Logo PGE" className="h-8 object-contain" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/150x40/ffffff/00A651?text=Logo+PGE"; }} />
+                            <img
+                                src="/images/pertamina-logo (1).png"
+                                alt="Pertamina Geothermal Energy"
+                                className="h-9 lg:h-10 object-contain"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = "https://via.placeholder.com/200x50?text=Logo+PGE";
+                                }}
+                            />
                         </div>
-                        <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-500">
-                            {auth?.user?.role === 'admin' && (
-                                <Link href={route('dashboard')} className="hover:text-[#00A651] transition-colors">Dashboard Admin</Link>
-                            )}
-                            <Link href="#" className="text-[#00A651] border-b-2 border-[#00A651] pb-1">Ajukan Peminjaman</Link>
-                            <Link href={route('borrow.status')} className="hover:text-[#00A651] transition-colors">Status Peminjaman</Link>
-                        </div>
-                        <div className="flex items-center gap-2 sm:gap-4">
-                            <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
-                                <div className="w-8 h-8 rounded-full bg-[#00A651] flex items-center justify-center text-white font-bold text-xs shadow-inner">
-                                    {auth?.user?.name ? auth.user.name.charAt(0).toUpperCase() : 'U'}
-                                </div>
-                                <span className="text-sm font-bold text-gray-700 hidden sm:block pr-2">{auth?.user?.name || 'User Pekerja'}</span>
-                            </div>
-                            <Link href={route('logout')} method="post" as="button" className="flex items-center gap-1.5 text-sm font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 sm:px-4 sm:py-2 rounded-full transition-colors border border-transparent hover:border-red-100">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                                <span className="hidden sm:block">Keluar</span>
+
+                        {/* Menu */}
+                        <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-gray-500">
+
+                            <Link
+                                href={route('dashboard')}
+                                className="hover:text-[#00A651] transition-colors"
+                            >
+                                Dashboard
                             </Link>
+
+                            <Link
+                                href={route('borrow.create')}
+                                className="text-[#00A651] border-b-2 border-[#00A651] pb-1"
+                            >
+                                Ajukan Peminjaman
+                            </Link>
+
+                            <Link
+                                href={route('borrow.status')}
+                                className="hover:text-[#00A651] transition-colors"
+                            >
+                                Status
+                            </Link>
+
+                            <a
+                                href="#contact"
+                                className="hover:text-[#00A651] transition-colors"
+                            >
+                                Contact Us
+                            </a>
+                        </div>
+
+                        {/* Right Side */}
+                        <div className="flex items-center gap-3">
+
+                            {auth?.user ? (
+                                <>
+                                    {/* User */}
+                                    <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
+                                        <div className="w-8 h-8 rounded-full bg-[#00A651] flex items-center justify-center text-white font-bold text-xs">
+                                            {auth.user.name
+                                                ? auth.user.name.charAt(0).toUpperCase()
+                                                : 'U'}
+                                        </div>
+                                        <span className="text-sm font-semibold text-gray-700 hidden sm:block">
+                                            {auth.user.name}
+                                        </span>
+                                    </div>
+
+                                    {/* Logout */}
+                                    <Link
+                                        href={route('logout')}
+                                        method="post"
+                                        as="button"
+                                        className="text-sm font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-full transition"
+                                    >
+                                        Keluar
+                                    </Link>
+                                </>
+                            ) : (
+                                /* Login */
+                                <Link
+                                    href={route('login')}
+                                    className="text-sm font-semibold text-[#00A651] border border-[#00A651] px-4 py-2 rounded-full hover:bg-[#00A651] hover:text-white transition"
+                                >
+                                    Login
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </nav>

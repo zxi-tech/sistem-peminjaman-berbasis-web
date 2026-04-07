@@ -14,7 +14,7 @@ export default function Welcome({ auth }) {
                     {/* Logo Kiri */}
                     <div className="flex items-center group cursor-pointer">
                         <img
-                            src="/images/logo-pertamina-pge.png"
+                            src="/images/pertamina-logo (1).png"
                             alt="Pertamina Geothermal Energy"
                             className="h-10 lg:h-12 object-contain transition-all duration-500 ease-out group-hover:scale-105 group-hover:brightness-110"
                             onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/200x50?text=Logo+PGE"; }}
@@ -93,35 +93,23 @@ export default function Welcome({ auth }) {
                         </div>
                     </div>
 
-                    {/* Kolom Kanan: Gambar & Orbit (TERKUNCI BERSAMA) */}
-                    <div className="w-full flex justify-center lg:justify-end items-center mt-12 lg:mt-0 relative z-10">
+                    {/* Kolom Kanan: Gambar & Orbit */}
+                    <div className="w-full flex justify-end items-center mt-12 lg:mt-0 relative z-10 overflow-visible">
 
-                        {/* WADAH UTAMA GAMBAR: Mengatur seberapa besar pekerja tampil */}
-                        {/* max-w-[650px] agar pekerja besar dan mendominasi layar kanan */}
-                        <div className="relative w-[90%] sm:w-[70%] lg:w-[100%] max-w-[550px] lg:max-w-[650px] xl:max-w-[700px] flex items-center justify-center transform lg:translate-x-4 xl:translate-x-8">
-
-                            {/* DEKORASI GARIS ORBIT (Posisinya dikunci relatif terhadap gambar pekerja) */}
-                            {/* w-[160%] membuatnya lebih lebar memanjang dari gambar pekerja */}
-                            {/* top-[35%] left-[45%] memastikan titik silang pas di leher/bahu kiri pekerja */}
-                            <div className="absolute top-[35%] left-[45%] transform -translate-x-1/2 -translate-y-1/2 w-[160%] opacity-35 z-0 pointer-events-none">
-                                <svg viewBox="0 0 600 350" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
-                                    <ellipse cx="300" cy="175" rx="280" ry="70" transform="rotate(-15 300 175)" stroke="#111827" strokeWidth="2" />
-                                    <ellipse cx="300" cy="175" rx="280" ry="70" transform="rotate(15 300 175)" stroke="#111827" strokeWidth="2" />
-                                </svg>
-                            </div>
-
-                            {/* GAMBAR PEKERJA */}
-                            {/* w-full memastikan dia mengisi penuh kotak wadahnya, jadi ukurannya besar */}
-                            <img
-                                src="/images/hero-workers.png"
-                                alt="Pekerja HSSE Pertamina"
-                                className="relative z-10 w-full h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.2)]"
-                                onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = "https://via.placeholder.com/800x600/E2E8F0/64748B?text=Hero+Image";
-                                }}
-                            />
+                        {/* Orbit */}
+                        <div className="absolute top-[40%] right-[-19%] w-[130%] opacity-25 z-0 pointer-events-none -translate-y-1/2">
+                            <svg viewBox="0 0 600 350" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+                                <ellipse cx="300" cy="175" rx="260" ry="65" transform="rotate(-15 300 175)" stroke="#111827" strokeWidth="2" />
+                                <ellipse cx="300" cy="175" rx="260" ry="65" transform="rotate(15 300 175)" stroke="#111827" strokeWidth="2" />
+                            </svg>
                         </div>
+
+                        {/* GAMBAR PEKERJA */}
+                        <img
+                            src="/images/hero-workers.png"
+                            alt="Pekerja HSSE Pertamina"
+                            className="relative z-10 w-[750px] lg:w-[900px] xl:w-[1000px] max-w-none h-auto object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.3)] -translate-y-6 lg:-translate-y-12"
+                        />
                     </div>
                 </main>
             </div>
