@@ -1,35 +1,79 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react'; // <-- Tambah router di sini
 
 export default function Items({ auth, items }) {
 
     // ================= STATE & LOGIKA FORM MODAL =================
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Jangan lupa pastikan 'errors' ada di sini
-    const { data, setData, post, processing, errors, reset } = useForm({
+    // State untuk menyimpan data barang yang sedang diedit (null jika mode Tambah)
+    const [editingItem, setEditingItem] = useState(null);
+
+    // Tambahkan field '_method' untuk mengakali Laravel saat update file
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         name: '',
         type: 'asset',
         description: '',
         photo: null,
-        sizes: [{ size_name: 'All Size', stock: 0 }]
+        sizes: [{ size_name: 'All Size', stock: 0 }],
+        _method: 'POST'
     });
 
     const closeModal = () => {
         setIsModalOpen(false);
+        setEditingItem(null);
         reset();
+        clearErrors();
+    };
+
+    // Fungsi untuk Buka Modal "Tambah"
+    const openCreateModal = () => {
+        setEditingItem(null);
+        reset();
+        clearErrors();
+        setData('_method', 'POST');
+        setIsModalOpen(true);
+    };
+
+    // Fungsi untuk Buka Modal "Edit"
+    const openEditModal = (item) => {
+        setEditingItem(item);
+        clearErrors();
+        setData({
+            name: item.name,
+            type: item.type,
+            description: item.description || '',
+            photo: null, // Dikosongkan agar tidak memaksa upload ulang
+            sizes: item.sizes.length > 0 ? item.sizes : [{ size_name: 'All Size', stock: 0 }],
+            _method: 'PUT' // <--- Surat Rahasia untuk Laravel
+        });
+        setIsModalOpen(true);
+    };
+
+    // ================= FUNGSI HAPUS BARANG =================
+    const handleDelete = (item) => {
+        if (window.confirm(`Peringatan!\n\nApakah Anda yakin ingin menghapus barang "${item.name}" secara permanen?\nSemua data stok dan foto barang ini akan hilang dan tidak dapat dikembalikan.`)) {
+            router.delete(route('items.destroy', item.id), {
+                preserveScroll: true, // Agar layar tidak lompat ke atas setelah menghapus
+            });
+        }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        post(route('items.store'), {
-            forceFormData: true, // <-- SANGAT PENTING: Wajib true agar file foto bisa terkirim bersama data lain!
+        // Tentukan rute: Jika ada editingItem, tembak ke route update. Jika tidak, ke route store.
+        const targetRoute = editingItem
+            ? route('items.update', editingItem.id)
+            : route('items.store');
+
+        post(targetRoute, {
+            forceFormData: true, // Wajib true agar foto bisa dikirim via POST/PUT-spoofing
             onSuccess: () => closeModal(),
             onError: (err) => {
                 console.error("Error dari Laravel:", err);
-                alert("Gagal menyimpan! Periksa tulisan merah pada formulir (Mungkin foto belum diisi/kebesaran).");
+                alert("Gagal menyimpan! Periksa tulisan merah pada formulir.");
             }
         });
     };
@@ -59,7 +103,7 @@ export default function Items({ auth, items }) {
                     </h1>
 
                     <button
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={openCreateModal}
                         className="bg-[#00A651] hover:bg-[#008c44] text-white px-5 py-2 rounded-full text-[11px] font-bold shadow-sm hover:shadow-md transition-all uppercase tracking-wider"
                     >
                         + Tambah Barang
@@ -84,9 +128,24 @@ export default function Items({ auth, items }) {
                                             </span>
                                         </div>
 
-                                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                            <button className="bg-white hover:bg-gray-50 text-gray-600 p-1.5 rounded-lg shadow-sm border border-gray-200 transition-colors">
-                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                        {/* TOMBOL AKSI (EDIT & HAPUS) */}
+                                        <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                                            {/* Tombol Edit */}
+                                            <button
+                                                onClick={() => openEditModal(item)}
+                                                title="Edit Barang"
+                                                className="bg-white hover:bg-[#00A651] hover:text-white text-gray-600 p-1.5 rounded-lg shadow-sm border border-gray-200 transition-colors"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                            </button>
+
+                                            {/* Tombol Hapus */}
+                                            <button
+                                                onClick={() => handleDelete(item)}
+                                                title="Hapus Barang"
+                                                className="bg-white hover:bg-red-500 hover:text-white text-gray-600 p-1.5 rounded-lg shadow-sm border border-gray-200 transition-colors"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
                                         </div>
 
@@ -112,8 +171,8 @@ export default function Items({ auth, items }) {
                                         <div className="mb-4 bg-slate-50 rounded-lg p-2.5 border border-slate-100">
                                             <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-2">Stok Per Varian</p>
                                             <div className="flex flex-wrap justify-center gap-1.5">
-                                                {item.sizes.map(size => (
-                                                    <div key={size.id} className="inline-flex items-center bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                                                {item.sizes.map((size, index) => (
+                                                    <div key={index} className="inline-flex items-center bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                                                         <span className="text-[9px] text-slate-400 font-bold mr-1">{size.size_name}:</span>
                                                         <span className={`text-[9px] font-extrabold ${size.stock > 0 ? 'text-slate-700' : 'text-red-500'}`}>
                                                             {size.stock}
@@ -141,25 +200,26 @@ export default function Items({ auth, items }) {
 
             </div>
 
-            {/* ================= MODAL POP-UP TAMBAH BARANG ================= */}
+            {/* ================= MODAL POP-UP (TAMBAH / EDIT) ================= */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
 
                         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Tambah Barang Baru</h2>
+                            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                                {editingItem ? 'Edit Barang' : 'Tambah Barang Baru'}
+                            </h2>
                             <button onClick={closeModal} className="text-gray-400 hover:text-red-500 transition-colors p-1">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
 
                         <div className="p-6 overflow-y-auto">
-                            <form id="addItemForm" onSubmit={handleSubmit} className="space-y-5">
+                            <form id="itemForm" onSubmit={handleSubmit} className="space-y-5">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="col-span-1 md:col-span-2">
                                         <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Nama Barang *</label>
                                         <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} className={`w-full border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A651] outline-none transition-shadow`} placeholder="Contoh: Helm Safety Putih" required />
-                                        {/* Teks Error Nama */}
                                         {errors.name && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.name}</p>}
                                     </div>
                                     <div>
@@ -170,16 +230,20 @@ export default function Items({ auth, items }) {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Foto Barang * (Max 2MB)</label>
+                                        <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                            Foto Barang {editingItem ? '(Opsional)' : '*'}
+                                        </label>
                                         <input
                                             type="file"
                                             accept="image/*"
                                             onChange={e => setData('photo', e.target.files[0])}
                                             className={`w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#00A651]/10 file:text-[#00A651] hover:file:bg-[#00A651]/20 border ${errors.photo ? 'border-red-500' : 'border-gray-300'} rounded-lg p-1 transition-colors`}
-                                            required
+                                            required={!editingItem} // Jika edit, tidak wajib upload foto baru
                                         />
-                                        {/* Teks Error Foto */}
                                         {errors.photo && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.photo}</p>}
+                                        {editingItem && editingItem.photo_path && (
+                                            <p className="text-[9px] text-gray-400 mt-1 italic">*Biarkan kosong jika tidak ingin mengubah foto</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -199,7 +263,6 @@ export default function Items({ auth, items }) {
                                         </button>
                                     </div>
 
-                                    {/* Teks Error Array Sizes (Jika ada) */}
                                     {errors.sizes && <p className="text-red-500 text-[10px] mb-2 font-bold">{errors.sizes}</p>}
 
                                     <div className="space-y-2">
@@ -225,8 +288,8 @@ export default function Items({ auth, items }) {
                             <button onClick={closeModal} className="px-5 py-2 text-[11px] uppercase tracking-wider font-bold text-gray-500 hover:bg-gray-200 rounded-full transition-colors">
                                 Batal
                             </button>
-                            <button type="submit" form="addItemForm" disabled={processing} className={`px-5 py-2 text-[11px] uppercase tracking-wider font-bold text-white rounded-full shadow-sm transition-all ${processing ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#00A651] hover:bg-[#008c44] hover:shadow-md'}`}>
-                                {processing ? 'Menyimpan...' : 'Simpan Barang'}
+                            <button type="submit" form="itemForm" disabled={processing} className={`px-5 py-2 text-[11px] uppercase tracking-wider font-bold text-white rounded-full shadow-sm transition-all ${processing ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#00A651] hover:bg-[#008c44] hover:shadow-md'}`}>
+                                {processing ? 'Menyimpan...' : (editingItem ? 'Update Barang' : 'Simpan Barang')}
                             </button>
                         </div>
                     </div>

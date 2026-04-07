@@ -46,13 +46,16 @@ Route::middleware('auth')->group(function () {
 // 2. AREA KHUSUS ADMIN HSSE (Dilindungi gembok 'admin')
 // ========================================================
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
-    
+
     // Dashboard Admin
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Manajemen Barang (Admin)
     Route::get('/items', [ItemController::class, 'index'])->name('items.index');
     Route::post('/items', [ItemController::class, 'store'])->name('items.store');
+    Route::put('/items/{id}', [ItemController::class, 'update'])->name('items.update');
+
+    Route::delete('/items/{id}', [ItemController::class, 'destroy'])->name('items.destroy');
 
     // Manajemen Peminjaman (Persetujuan Admin)
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
@@ -65,4 +68,4 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
