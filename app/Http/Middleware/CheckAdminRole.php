@@ -13,9 +13,13 @@ class CheckAdminRole
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Cek apakah user sudah login, dan apakah role-nya 'admin'
-        if (auth()->check() && auth()->user()->role !== 'admin') {
-            
+        // Gunakan $request->user() alih-alih auth()->user()
+        /** @var \App\Models\User|null $user */
+        $user = $request->user();
+
+        // Cek apakah user sudah login, dan apakah role-nya BUKAN 'admin'
+        if ($user && $user->role !== 'admin') {
+
             // Jika BUKAN admin, tendang ke halaman Form Peminjaman Pekerja
             return redirect()->route('borrow.create')->with('error', 'Akses ditolak. Anda tidak memiliki hak akses Admin HSSE.');
         }

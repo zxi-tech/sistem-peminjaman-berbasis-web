@@ -4,29 +4,33 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class OtpController extends Controller
 {
     // === 1. FASE EMAIL ===
     public function verifyEmailView()
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         // Cegah masuk jika email sudah terverifikasi
-        if (auth()->user()->email_verified_at) {
+        if ($user->email_verified_at) {
             return redirect()->route('otp.phone.view');
         }
-        
+
         return Inertia::render('Auth/VerifyEmailOtp', [
-            'email' => auth()->user()->email,
-            // HANYA UNTUK TESTING: Kita kirim kodenya ke frontend agar Anda mudah mengujinya. 
-            // Di produksi nyata, baris ini HARUS dihapus!
-            'testing_otp' => auth()->user()->email_otp 
+            'email' => $user->email,
+            'testing_otp' => $user->email_otp
         ]);
     }
 
     public function verifyEmail(Request $request)
     {
         $request->validate(['otp' => 'required|numeric|digits:6']);
-        $user = auth()->user();
+
+        /** @var \App\Models\User $user */
+        $user = $request->user();
 
         if ($request->otp == $user->email_otp) {
             // Berhasil! Hapus OTP dan catat jam verifikasi
@@ -44,21 +48,26 @@ class OtpController extends Controller
     // === 2. FASE WHATSAPP ===
     public function verifyPhoneView()
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         // Pastikan email sudah beres dulu
-        if (!auth()->user()->email_verified_at) {
+        if (!$user->email_verified_at) {
             return redirect()->route('otp.email.view');
         }
 
         return Inertia::render('Auth/VerifyPhoneOtp', [
-            'phone' => auth()->user()->phone,
-            'testing_otp' => auth()->user()->phone_otp // Hapus ini di produksi
+            'phone' => $user->phone,
+            'testing_otp' => $user->phone_otp // Hapus ini di produksi
         ]);
     }
 
     public function verifyPhone(Request $request)
     {
         $request->validate(['otp' => 'required|numeric|digits:6']);
-        $user = auth()->user();
+
+        /** @var \App\Models\User $user */
+        $user = $request->user();
 
         if ($request->otp == $user->phone_otp) {
             // 1. Berhasil! Hapus OTP dan catat waktu verifikasi
@@ -68,7 +77,7 @@ class OtpController extends Controller
             ]);
 
             // 2. Logout akun secara paksa (Sesuai skenario Anda)
-            \Illuminate\Support\Facades\Auth::logout();
+            Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
