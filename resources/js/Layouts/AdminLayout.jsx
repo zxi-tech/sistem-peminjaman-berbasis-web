@@ -15,9 +15,9 @@ export default function AdminLayout({ user, children }) {
                 {/* Area Logo & Toggle Icon */}
                 <div className="h-[72px] flex items-center justify-between px-6 border-b border-transparent">
                     <img
-                        src="/images/logo-pertamina-pge.png"
+                        src="/images/pertamina-logo (1).png"
                         alt="PGE Logo"
-                        className="h-8 object-contain"
+                        className="h-12 object-contain"
                         onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/120x30?text=Logo+PGE"; }}
                     />
                     {/* Ikon Collapse (<<) seperti di template */}

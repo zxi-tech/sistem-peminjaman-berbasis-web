@@ -8,7 +8,8 @@ export default function Users({ auth, users }) {
     const dummyUsers = users && users.length > 0 ? users : [
         { id: 1, name: 'Eneh Mercy', nip: '703703', email: 'michelle.rivera@example.com', department: 'Operasional', phone: '0812-3456-7890', photo: 'https://i.pravatar.cc/150?img=1', role: 'Staff Lapangan', about: 'Staff lapangan di bagian Operasional Panas Bumi. Bertanggung jawab atas inspeksi harian.', area: 'Site Lahendong', status: 'Aktif' },
         { id: 2, name: 'Marvin McKinney', nip: '877037', email: 'kenzi.lawson@example.com', department: 'HSSE', phone: '0857-9876-5432', photo: 'https://i.pravatar.cc/150?img=11', role: 'Safety Inspector', about: 'Mengawasi kepatuhan standar keselamatan kerja di area pembangkit listrik.', area: 'Site Kamojang', status: 'Aktif' },
-        { id: 3, name: 'Brooklyn Simmons', nip: '370357', email: 'nathan.roberts@example.com', department: 'Teknik', phone: '0811-2345-6789', photo: 'https://i.pravatar.cc/150?img=5', role: 'Mechanical Engineer', about: 'Fokus pada perawatan turbin dan komponen mekanis utama.', area: 'Site Ulubelu', status: 'Aktif' },
+        // Saya buat foto Brooklyn jadi null untuk mendemonstrasikan fitur Inisial Nama berfungsi!
+        { id: 3, name: 'Brooklyn Simmons', nip: '370357', email: 'nathan.roberts@example.com', department: 'Teknik', phone: '0811-2345-6789', photo: null, role: 'Mechanical Engineer', about: 'Fokus pada perawatan turbin dan komponen mekanis utama.', area: 'Site Ulubelu', status: 'Aktif' },
         { id: 4, name: 'Dianne Russell', nip: '870316', email: 'felicia.reid@example.com', department: 'Operasional', phone: '0821-8765-4321', photo: 'https://i.pravatar.cc/150?img=9', role: 'Operator Shift', about: 'Memastikan operasional pembangkit berjalan mulus pada shift malam.', area: 'Site Lahendong', status: 'Cuti' },
         { id: 5, name: 'Cody Fisher', nip: '547030', email: 'tim.jennings@example.com', department: 'HSSE', phone: '0813-5678-9012', photo: 'https://i.pravatar.cc/150?img=33', role: 'HSSE Admin', about: 'Staff lapangan di bagian Operasional Panas Bumi. Bertanggung jawab atas inspeksi harian dan berkomitmen penuh pada budaya Safety First.', area: 'Site Lahendong', status: 'Aktif' },
         { id: 6, name: 'Guy Hawkins', nip: '270374', email: 'alma.lawson@example.com', department: 'Operasional', phone: '0878-1098-7654', photo: 'https://i.pravatar.cc/150?img=12', role: 'Logistik', about: 'Mengatur pasokan APD dan spare part mesin.', area: 'Kantor Pusat', status: 'Aktif' },
@@ -52,7 +53,7 @@ export default function Users({ auth, users }) {
                                 <input
                                     type="text"
                                     placeholder="Cari karyawan"
-                                    className="w-full bg-transparent border-none pl-8 pr-4 py-2 text-sm text-gray-700 outline-none placeholder-gray-400"
+                                    className="w-full bg-transparent border-none pl-8 pr-4 py-2 text-sm text-gray-700 outline-none placeholder-gray-400 focus:ring-0"
                                 />
                             </div>
                         </div>
@@ -81,7 +82,31 @@ export default function Users({ auth, users }) {
                                                 {/* Kolom Nama & Avatar */}
                                                 <td className="px-5 sm:px-6 py-3.5">
                                                     <div className="flex items-center gap-3">
-                                                        <img src={u.photo} alt={u.name} className="w-8 h-8 rounded-full object-cover shadow-sm border border-gray-200" />
+
+                                                        {/* ================= PERBAIKAN AVATAR TABEL ================= */}
+                                                        <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden bg-blue-100 flex items-center justify-center border border-gray-200 shadow-sm relative">
+                                                            {u.photo ? (
+                                                                <img
+                                                                    src={u.photo}
+                                                                    alt={u.name}
+                                                                    className="w-full h-full object-cover"
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.style.display = 'none';
+                                                                        e.target.nextSibling.style.display = 'flex';
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                <span className="text-blue-600 font-bold text-xs flex items-center justify-center w-full h-full">
+                                                                    {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                                                                </span>
+                                                            )}
+                                                            <span className="hidden text-blue-600 font-bold text-xs items-center justify-center w-full h-full absolute inset-0 bg-blue-100">
+                                                                {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                                                            </span>
+                                                        </div>
+                                                        {/* =========================================================== */}
+
                                                         <span className={`text-[13px] font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
                                                             {u.name}
                                                         </span>
@@ -136,10 +161,31 @@ export default function Users({ auth, users }) {
                         {/* ID Pekerja Profil */}
                         <p className="text-sm font-semibold text-gray-500 mb-4">{selectedUser?.nip}</p>
 
-                        {/* Foto Profil Melingkar Besar */}
-                        <div className="w-36 h-36 rounded-full p-1 bg-white border border-gray-200 shadow-sm mb-5 overflow-hidden">
-                            <img src={selectedUser?.photo} alt={selectedUser?.name} className="w-full h-full rounded-full object-cover" />
+                        {/* ================= PERBAIKAN FOTO PROFIL BESAR ================= */}
+                        <div className="w-36 h-36 rounded-full p-1 bg-white border border-gray-200 shadow-sm mb-5 overflow-hidden flex items-center justify-center">
+                            <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-tr from-blue-500 to-blue-400 flex items-center justify-center relative">
+                                {selectedUser?.photo ? (
+                                    <img
+                                        src={selectedUser.photo}
+                                        alt={selectedUser?.name}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.style.display = 'none';
+                                            e.target.nextSibling.style.display = 'flex';
+                                        }}
+                                    />
+                                ) : (
+                                    <span className="text-white font-extrabold text-5xl shadow-sm flex items-center justify-center w-full h-full">
+                                        {selectedUser?.name ? selectedUser.name.charAt(0).toUpperCase() : 'U'}
+                                    </span>
+                                )}
+                                <span className="hidden text-white font-extrabold text-5xl shadow-sm items-center justify-center w-full h-full absolute inset-0 bg-gradient-to-tr from-blue-500 to-blue-400">
+                                    {selectedUser?.name ? selectedUser.name.charAt(0).toUpperCase() : 'U'}
+                                </span>
+                            </div>
                         </div>
+                        {/* =================================================================== */}
 
                         {/* Nama & Departemen Profil */}
                         <h2 className="text-xl font-bold text-gray-900 tracking-tight">{selectedUser?.name}</h2>
