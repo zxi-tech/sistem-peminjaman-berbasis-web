@@ -46,28 +46,32 @@ export default function Welcome({ auth }) {
 
                     {/* ZONA 2: Navigasi (Tengah) - Menggunakan Link Pintar */}
                     <div className="hidden lg:flex flex-1 items-center justify-center gap-8 xl:gap-12 text-[14px] font-bold text-gray-600">
+
+                        {/* 👇 BERANDA / DASHBOARD (AKTIF) 👇 */}
                         <Link
                             href={auth?.user?.role === 'admin' ? route('dashboard') : '/'}
-                            className="relative group py-2 hover:text-[#21409A] transition-colors duration-300"
+                            className="relative group py-2 text-[#21409A] hover:text-[#21409A] transition-colors duration-300"
                         >
                             {auth?.user?.role === 'admin' ? 'Dashboard' : 'Beranda'}
-                            <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#21409A] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out origin-left"></span>
+                            <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#21409A] scale-x-100 transition-transform duration-300 ease-out origin-left"></span>
                         </Link>
 
+                        {/* Ajukan Peminjaman (Normal) */}
                         <Link href={route('borrow.create')} className="relative group py-2 hover:text-[#21409A] transition-colors duration-300">
                             Ajukan Peminjaman
                             <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#21409A] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out origin-left"></span>
                         </Link>
 
+                        {/* Status (Normal) */}
                         <Link href={route('borrow.status')} className="relative group py-2 hover:text-[#21409A] transition-colors duration-300">
                             Status
                             <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#21409A] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out origin-left"></span>
                         </Link>
 
-                        <a href="#contact" className="relative group py-2 hover:text-[#21409A] transition-colors duration-300">
+                        <Link href={route('contact')} className="relative group py-2 hover:text-[#21409A] transition-colors duration-300">
                             Contact Us
                             <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#21409A] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out origin-left"></span>
-                        </a>
+                        </Link>
                     </div>
 
                     {/* ZONA 3: Profil & Login (Kanan) */}

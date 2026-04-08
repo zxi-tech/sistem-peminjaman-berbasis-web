@@ -21,7 +21,7 @@ class BorrowController extends Controller
     {
         // Ambil semua barang dari database beserta ukuran dan stoknya.
         // Kita hanya mengambil ukuran yang stoknya lebih dari 0.
-        $items = Item::with(['sizes' => function($query) {
+        $items = Item::with(['sizes' => function ($query) {
             $query->where('stock', '>', 0);
         }])->get();
 
@@ -54,6 +54,7 @@ class BorrowController extends Controller
                     'status' => $trx->status,
                     'purpose' => $trx->purpose,
                     'notes' => $trx->notes, // Alasan penolakan dari admin (jika ada)
+                    'created_at' => $trx->created_at,
                 ];
             });
 
@@ -109,10 +110,9 @@ class BorrowController extends Controller
 
             DB::commit();
             return redirect()->route('borrow.status')->with('success', 'Pengajuan berhasil dikirim! Menunggu persetujuan Admin.');
-
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             // PAKSA LEMPAR ERROR VALIDASI AGAR REACT BISA MENANGKAPNYA
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'selected_items' => 'Sistem Gagal Menyimpan: ' . $e->getMessage()

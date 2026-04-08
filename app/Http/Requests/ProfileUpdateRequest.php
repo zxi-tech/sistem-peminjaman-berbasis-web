@@ -26,8 +26,13 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
-            // 👇 INI BARIS YANG DITAMBAHKAN UNTUK FOTO 👇
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+
+            'nip' => ['required', 'string', 'max:50'],
+            'about' => ['nullable', 'string', 'max:1000'],
+
+            // 👇 INI DIA YANG BIKIN NOMOR HP GAGAL DISAVE 👇
+            'phone' => ['nullable', 'string', 'max:20'],
         ];
     }
 }

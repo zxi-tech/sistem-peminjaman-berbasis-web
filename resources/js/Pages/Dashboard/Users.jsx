@@ -147,7 +147,7 @@ export default function Users({ auth, users }) {
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden bg-blue-100 flex items-center justify-center border border-gray-200 shadow-sm relative">
                                                                 {u.photo ? (
-                                                                    <img src={u.photo} alt={u.name} className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                                                                    <img src={u.photo.startsWith('http') ? u.photo : `/storage/${u.photo}`} alt={u.name} className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
                                                                 ) : (
                                                                     <span className="text-blue-600 font-bold text-xs flex items-center justify-center w-full h-full">{u.name ? u.name.charAt(0).toUpperCase() : 'U'}</span>
                                                                 )}
@@ -196,7 +196,7 @@ export default function Users({ auth, users }) {
                         <div className="w-36 h-36 rounded-full p-1 bg-white border border-gray-200 shadow-sm mb-5 overflow-hidden flex items-center justify-center">
                             <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-tr from-blue-500 to-blue-400 flex items-center justify-center relative">
                                 {selectedUser?.photo ? (
-                                    <img src={selectedUser.photo} alt={selectedUser?.name} className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                                    <img src={selectedUser.photo.startsWith('http') ? selectedUser.photo : `/storage/${selectedUser.photo}`} alt={selectedUser?.name} className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
                                 ) : (
                                     <span className="text-white font-extrabold text-5xl shadow-sm flex items-center justify-center w-full h-full">{selectedUser?.name ? selectedUser.name.charAt(0).toUpperCase() : 'U'}</span>
                                 )}
