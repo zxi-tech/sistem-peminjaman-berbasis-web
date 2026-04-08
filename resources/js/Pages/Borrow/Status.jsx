@@ -169,72 +169,130 @@ export default function Status({ auth, transactions }) {
                     </div>
                 </nav>
 
-                {/* ================= KONTEN UTAMA ================= */}
-                <main className="max-w-4xl mx-auto px-4 sm:px-6 mt-10">
+                <main className="max-w-5xl mx-auto px-4 sm:px-6 mt-10">
 
-                    <div className="mb-8 text-center sm:text-left">
-                        <div className="inline-flex items-center gap-2 bg-blue-50 text-[#21409A] text-xs font-bold px-3 py-1 rounded-full mb-3 tracking-wide">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                            MONITORING
+                    {/* HEADER */}
+                    <div className="mb-10 text-center sm:text-left">
+                        <div className="inline-flex items-center gap-2 bg-green-50 text-[#00A651] text-xs font-bold px-4 py-1.5 rounded-full mb-3 tracking-wide shadow-sm">
+                            HSSE MONITORING
                         </div>
-                        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Riwayat & Status Peminjaman</h1>
-                        <p className="text-sm text-gray-500 leading-relaxed">Pantau status pengajuan APD Anda di sini. Pengajuan yang disetujui dapat segera diambil di ruang admin HSSE.</p>
+                        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
+                            Status Peminjaman APD
+                        </h1>
+                        <p className="text-sm text-gray-500">
+                            Monitoring pengajuan dan penggunaan alat pelindung diri secara real-time.
+                        </p>
                     </div>
 
-                    <div className="space-y-4">
+                    {/* ================= SUMMARY ================= */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+                        {[
+                            { label: 'Total', value: transactions?.length || 0 },
+                            { label: 'Menunggu', value: transactions?.filter(t => t.status === 'menunggu').length || 0 },
+                            { label: 'Disetujui', value: transactions?.filter(t => t.status === 'disetujui').length || 0 },
+                            { label: 'Ditolak', value: transactions?.filter(t => t.status === 'ditolak').length || 0 },
+                        ].map((item, i) => (
+                            <div key={i} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                <p className="text-xs text-gray-400 mb-1">{item.label}</p>
+                                <h2 className="text-2xl font-extrabold text-gray-800">{item.value}</h2>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* ================= LIST ================= */}
+                    <div className="space-y-6">
                         {transactions && transactions.length > 0 ? (
                             transactions.map((trx, index) => (
-                                <div key={index} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                                <div key={index} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all overflow-hidden">
 
-                                    <div className="bg-gray-50/80 px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-white border border-gray-200 px-3 py-1.5 rounded-lg">
-                                                <span className="text-xs font-extrabold text-gray-700">TRX-{new Date(trx.created_at || new Date()).getFullYear()}{String(trx.id || trx.raw_id || 0).padStart(3, '0')}</span>
-                                            </div>
-                                            <span className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                                {trx.start_date || (trx.dates ? trx.dates.split(' - ')[0] : '-')}
-                                            </span>
+                                    {/* HEADER */}
+                                    <div className="flex flex-col sm:flex-row justify-between gap-4 px-6 py-4 bg-gradient-to-r from-green-50 to-white border-b">
+                                        <div>
+                                            <p className="text-xs text-gray-400">ID Transaksi</p>
+                                            <h3 className="font-bold text-gray-800">
+                                                TRX-{new Date(trx.created_at || new Date()).getFullYear()}
+                                                {String(trx.id || 0).padStart(3, '0')}
+                                            </h3>
                                         </div>
-                                        <div className={`px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wider text-center ${getStatusStyle(trx.status)}`}>
+
+                                        <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusStyle(trx.status)}`}>
                                             {trx.status}
                                         </div>
                                     </div>
 
-                                    <div className="p-6">
-                                        <div className="mb-4">
-                                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Barang yang dipinjam:</h4>
-                                            <p className="text-sm font-bold text-gray-800 leading-relaxed">
-                                                {trx.items || (trx.details ? trx.details.map(d => `${d.itemSize?.item?.name || 'Barang'} (x${d.quantity})`).join(', ') : 'Tidak ada detail barang')}
+                                    {/* BODY */}
+                                    <div className="p-6 space-y-5">
+
+                                        {/* Barang */}
+                                        <div>
+                                            <p className="text-xs text-gray-400 mb-1">Barang Dipinjam</p>
+                                            <p className="font-semibold text-gray-800">
+                                                {trx.items || (trx.details
+                                                    ? trx.details.map(d => `${d.itemSize?.item?.name} (x${d.quantity})`).join(', ')
+                                                    : '-')}
                                             </p>
                                         </div>
 
-                                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Tujuan Peminjaman:</h4>
-                                            <p className="text-sm font-medium text-gray-600">{trx.purpose}</p>
+                                        {/* Tujuan */}
+                                        <div>
+                                            <p className="text-xs text-gray-400 mb-1">Tujuan</p>
+                                            <p className="text-sm text-gray-600">{trx.purpose}</p>
                                         </div>
 
+                                        {/* Tanggal */}
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div className="bg-gray-50 p-3 rounded-lg border">
+                                                <p className="text-gray-400 text-xs">Mulai</p>
+                                                <p className="font-semibold text-gray-700">{trx.start_date || '-'}</p>
+                                            </div>
+                                            <div className="bg-gray-50 p-3 rounded-lg border">
+                                                <p className="text-gray-400 text-xs">Selesai</p>
+                                                <p className="font-semibold text-gray-700">{trx.end_date || '-'}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* PROGRESS */}
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1 text-gray-400">
+                                                <span>Progress</span>
+                                                <span className="font-semibold text-gray-600">{trx.status}</span>
+                                            </div>
+
+                                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full transition-all duration-500 ${trx.status === 'menunggu' ? 'w-1/4 bg-yellow-400' :
+                                                            trx.status === 'disetujui' ? 'w-2/4 bg-green-400' :
+                                                                trx.status === 'dipinjam' ? 'w-3/4 bg-green-500' :
+                                                                    trx.status === 'selesai' || trx.status === 'dikembalikan'
+                                                                        ? 'w-full bg-[#00A651]'
+                                                                        : 'w-full bg-red-400'
+                                                        }`}
+                                                ></div>
+                                            </div>
+                                        </div>
+
+                                        {/* PENOLAKAN */}
                                         {trx.status === 'ditolak' && trx.notes && (
-                                            <div className="mt-4 bg-red-50 p-4 rounded-xl border border-red-100 flex items-start gap-3">
-                                                <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                                                <div>
-                                                    <h4 className="text-xs font-bold text-red-800 uppercase tracking-wide mb-0.5">Alasan Penolakan:</h4>
-                                                    <p className="text-sm font-medium text-red-600">{trx.notes}</p>
-                                                </div>
+                                            <div className="bg-red-50 border border-red-100 p-4 rounded-xl">
+                                                <p className="text-xs text-red-500 font-bold mb-1">Alasan Penolakan</p>
+                                                <p className="text-sm text-red-600">{trx.notes}</p>
                                             </div>
                                         )}
+
                                     </div>
                                 </div>
                             ))
                         ) : (
-                            <div className="bg-white rounded-[24px] shadow-sm border border-gray-200 p-12 text-center flex flex-col items-center animate-in fade-in duration-500">
-                                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
-                                    <svg className="w-10 h-10 text-[#21409A]/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-1">Belum Ada Pengajuan</h3>
-                                <p className="text-sm text-gray-500 mb-6">Anda belum pernah melakukan pengajuan peminjaman barang HSSE ke sistem.</p>
-                                <Link href={route('borrow.create')} className="bg-[#21409A] hover:bg-[#1a3380] text-white px-8 py-3 rounded-xl text-sm font-bold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5">
-                                    Ajukan Peminjaman Baru
+                            <div className="bg-white p-12 text-center rounded-2xl border shadow-sm">
+                                <h3 className="font-bold text-gray-800 mb-2">Belum Ada Pengajuan</h3>
+                                <p className="text-sm text-gray-500 mb-6">
+                                    Anda belum pernah melakukan peminjaman APD.
+                                </p>
+                                <Link
+                                    href={route('borrow.create')}
+                                    className="bg-[#00A651] hover:bg-[#00994a] text-white px-8 py-3 rounded-xl text-sm font-bold shadow-md transition-all hover:shadow-lg"
+                                >
+                                    Ajukan Sekarang
                                 </Link>
                             </div>
                         )}
