@@ -1,8 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 
 export default function Create({ auth, items }) {
     const { flash } = usePage().props;
+    const user = auth?.user;
 
     const displayItems = items && items.length > 0 ? items : [
         {
@@ -15,7 +16,6 @@ export default function Create({ auth, items }) {
         }
     ];
 
-    // 1. TAMBAHKAN 'errors' DI SINI
     const { data, setData, post, processing, reset, errors } = useForm({
         start_date: '',
         end_date: '',
@@ -25,6 +25,21 @@ export default function Create({ auth, items }) {
 
     const [expandedItems, setExpandedItems] = useState({});
     const [searchTerm, setSearchTerm] = useState('');
+
+    // ================= STATES INTERAKTIVITAS DROPDOWN =================
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const profileMenuRef = useRef(null);
+
+    // Menutup dropdown profil jika user klik di luar area
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+                setIsProfileMenuOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     useEffect(() => {
         if (flash?.success) {
@@ -54,9 +69,11 @@ export default function Create({ auth, items }) {
                 const qty = data.selected_items[itemId][sizeId];
                 if (qty > 0) {
                     const sizeInfo = item.sizes.find(s => s.id === parseInt(sizeId));
-                    itemTotalQty += qty;
-                    totalItems += qty;
-                    sizesSelected.push(`${sizeInfo.size_name} (${qty})`);
+                    if (sizeInfo) {
+                        itemTotalQty += qty;
+                        totalItems += qty;
+                        sizesSelected.push(`${sizeInfo.size_name} (${qty})`);
+                    }
                 }
             });
 
@@ -72,20 +89,27 @@ export default function Create({ auth, items }) {
         return { summary, totalItems };
     }, [data.selected_items, displayItems]);
 
-    // 2. PERBARUI HANDLESUBMIT UNTUK MENANGKAP ERROR
     const handleSubmit = (e) => {
         e.preventDefault();
 
         if (selectedSummary.totalItems === 0) {
-            alert('Silakan pilih minimal satu barang terlebih dahulu.');
+            alert('PILIH BARANG DULU: Silakan isi jumlah barang yang ingin dipinjam.');
+            return;
+        }
+
+        if (!data.start_date || !data.end_date || !data.purpose) {
+            alert('FORM BELUM LENGKAP: Harap pastikan Tanggal dan Tujuan sudah terisi!');
             return;
         }
 
         post(route('borrow.store'), {
-            preserveScroll: false, // <--- UBAH JADI FALSE AGAR LAYAR LANGSUNG NAIK KE ATAS!
+            preserveScroll: true,
+            onSuccess: () => {
+                console.log("Pengajuan Sukses!");
+            },
             onError: (err) => {
-                // Munculkan Pop-up di tengah layar jika gagal
-                alert("GAGAL MENGAJUKAN!\n\n" + (err.selected_items || "Silakan cek kembali tanggal dan keperluan Anda."));
+                console.error("Error dari Laravel:", err);
+                alert("Pengajuan Ditolak Server! Lihat kotak merah di bagian atas formulir.");
             }
         });
     };
@@ -96,16 +120,19 @@ export default function Create({ auth, items }) {
 
     const handleQuantityChange = (itemId, sizeId, qty) => {
         const parsedQty = parseInt(qty) || 0;
-        setData(prev => ({
-            ...prev,
-            selected_items: {
-                ...prev.selected_items,
-                [itemId]: {
-                    ...prev.selected_items[itemId],
-                    [sizeId]: parsedQty
+        setData(prev => {
+            const currentItemObj = prev.selected_items[itemId] || {};
+            return {
+                ...prev,
+                selected_items: {
+                    ...prev.selected_items,
+                    [itemId]: {
+                        ...currentItemObj,
+                        [sizeId]: parsedQty
+                    }
                 }
-            }
-        }));
+            };
+        });
     };
 
     const isItemSelected = (itemId) => {
@@ -114,103 +141,140 @@ export default function Create({ auth, items }) {
         return Object.values(itemSizes).some(qty => qty > 0);
     };
 
+    // Helper Inisial Nama
+    const getInitials = (name) => {
+        if (!name) return 'U';
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    };
+
     return (
         <>
             <Head title="Ajukan Peminjaman" />
 
-            <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20 text-gray-800 selection:bg-[#00A651] selection:text-white">
+            <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20 text-gray-800 selection:bg-[#21409A] selection:text-white">
 
-                {/* Navbar */}
-                <nav className="w-full bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-                    <div className="max-w-[1536px] mx-auto flex items-center justify-between px-6 lg:px-12 xl:px-20 py-4">
+                {/* ================= NAVBAR TRANSPARAN (SEPERTI BERANDA) ================= */}
+                <nav className="w-full max-w-[1536px] mx-auto flex items-center justify-between px-6 lg:px-12 xl:px-20 py-8 z-50 bg-transparent">
 
-                        {/* Logo */}
-                        <div className="flex items-center">
-                            <img
-                                src="/images/pertamina-logo (1).png"
-                                alt="Pertamina Geothermal Energy"
-                                className="h-9 lg:h-10 object-contain"
-                                onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = "https://via.placeholder.com/200x50?text=Logo+PGE";
-                                }}
-                            />
-                        </div>
+                    {/* ZONA 1: Logo Kiri */}
+                    <div className="flex items-center group cursor-pointer w-full lg:w-1/4 shrink-0">
+                        <img
+                            src="/images/pertamina-logo (1).png"
+                            alt="Pertamina Geothermal Energy"
+                            className="h-10 lg:h-12 object-contain transition-all duration-500 ease-out group-hover:scale-105 group-hover:brightness-110"
+                            onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/200x50?text=Logo+PGE"; }}
+                        />
+                    </div>
 
-                        {/* Menu */}
-                        <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-gray-500">
+                    {/* ZONA 2: Navigasi (Tengah) */}
+                    <div className="hidden lg:flex flex-1 items-center justify-center gap-8 xl:gap-12 text-[14px] font-bold text-gray-600">
+                        <Link
+                            href={auth?.user?.role === 'admin' ? route('dashboard') : '/'}
+                            className="relative group py-2 hover:text-[#21409A] transition-colors duration-300"
+                        >
+                            {auth?.user?.role === 'admin' ? 'Dashboard' : 'Beranda'}
+                            <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#21409A] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out origin-left"></span>
+                        </Link>
 
-                            <Link
-                                href={route('dashboard')}
-                                className="hover:text-[#00A651] transition-colors"
-                            >
-                                Dashboard
-                            </Link>
+                        <Link href={route('borrow.create')} className="relative group py-2 hover:text-[#21409A] transition-colors duration-300">
+                            Ajukan Peminjaman
+                            <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#21409A] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out origin-left"></span>
+                        </Link>
 
-                            <Link
-                                href={route('borrow.create')}
-                                className="text-[#00A651] border-b-2 border-[#00A651] pb-1"
-                            >
-                                Ajukan Peminjaman
-                            </Link>
+                        <Link href={route('borrow.status')} className="relative group py-2 hover:text-[#21409A] transition-colors duration-300">
+                            Status
+                            <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#21409A] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out origin-left"></span>
+                        </Link>
 
-                            <Link
-                                href={route('borrow.status')}
-                                className="hover:text-[#00A651] transition-colors"
-                            >
-                                Status
-                            </Link>
+                        <a href="#contact" className="relative group py-2 hover:text-[#21409A] transition-colors duration-300">
+                            Contact Us
+                            <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#21409A] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out origin-left"></span>
+                        </a>
+                    </div>
 
-                            <a
-                                href="#contact"
-                                className="hover:text-[#00A651] transition-colors"
-                            >
-                                Contact Us
-                            </a>
-                        </div>
-
-                        {/* Right Side */}
-                        <div className="flex items-center gap-3">
-
-                            {auth?.user ? (
-                                <>
-                                    {/* User */}
-                                    <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
-                                        <div className="w-8 h-8 rounded-full bg-[#00A651] flex items-center justify-center text-white font-bold text-xs">
-                                            {auth.user.name
-                                                ? auth.user.name.charAt(0).toUpperCase()
-                                                : 'U'}
-                                        </div>
-                                        <span className="text-sm font-semibold text-gray-700 hidden sm:block">
-                                            {auth.user.name}
-                                        </span>
-                                    </div>
-
-                                    {/* Logout */}
-                                    <Link
-                                        href={route('logout')}
-                                        method="post"
-                                        as="button"
-                                        className="text-sm font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-full transition"
-                                    >
-                                        Keluar
-                                    </Link>
-                                </>
-                            ) : (
-                                /* Login */
-                                <Link
-                                    href={route('login')}
-                                    className="text-sm font-semibold text-[#00A651] border border-[#00A651] px-4 py-2 rounded-full hover:bg-[#00A651] hover:text-white transition"
+                    {/* ZONA 3: Profil & Login (Kanan) */}
+                    <div className="flex items-center justify-end w-full lg:w-1/4 shrink-0">
+                        {auth?.user ? (
+                            <div className="relative shrink-0" ref={profileMenuRef}>
+                                <div
+                                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                                    className={`flex items-center space-x-3 cursor-pointer p-1.5 rounded-xl transition-all duration-200 border ${isProfileMenuOpen ? 'bg-white border-gray-200 shadow-sm' : 'border-transparent hover:bg-white/60 hover:border-gray-200'}`}
                                 >
-                                    Login
-                                </Link>
-                            )}
-                        </div>
+                                    <div className="relative">
+                                        <div className="h-10 w-10 rounded-full bg-[#00A651] flex items-center justify-center text-white font-bold text-sm border-2 border-white shadow-sm overflow-hidden">
+                                            {user?.photo ? (
+                                                <img
+                                                    src={`/storage/${user.photo}`}
+                                                    alt={user?.name}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.style.display = 'none';
+                                                        e.target.nextSibling.style.display = 'flex';
+                                                    }}
+                                                />
+                                            ) : null}
+                                            <span className={`w-full h-full flex items-center justify-center ${user?.photo ? 'hidden' : ''}`}>
+                                                {getInitials(user?.name)}
+                                            </span>
+                                        </div>
+                                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                                    </div>
+                                    <div className="hidden md:flex flex-col text-left">
+                                        <span className="text-[14px] font-bold text-gray-800 leading-tight">{user?.name || 'HSSE'}</span>
+                                        <span className="text-[11px] text-[#21409A] font-semibold capitalize leading-tight">{user?.department || 'Departemen'}</span>
+                                    </div>
+                                    <svg className={`w-4 h-4 text-gray-500 ml-1 transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+
+                                {/* Isi Dropdown Profil */}
+                                {isProfileMenuOpen && (
+                                    <div className="absolute right-0 mt-3 w-60 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="px-4 py-3 border-b border-gray-50">
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Masuk sebagai</p>
+                                            <p className="text-sm font-bold text-gray-900 truncate">{user?.email || 'user@pertamina.com'}</p>
+                                        </div>
+
+                                        <div className="py-2">
+                                            <Link href={route('profile.edit')} className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-[#21409A] transition-colors">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                                Edit Profil
+                                            </Link>
+
+                                            {/* Tombol Dashboard khusus Admin */}
+                                            {user?.role === 'admin' && (
+                                                <Link href={route('dashboard')} className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-[#21409A] transition-colors">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                                                    Dashboard Admin
+                                                </Link>
+                                            )}
+                                        </div>
+
+                                        <div className="border-t border-gray-50 pt-1 mt-1">
+                                            <Link href={route('logout')} method="post" as="button" className="flex items-center w-full gap-3 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                                Keluar (Logout)
+                                            </Link>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link
+                                href={route('login')}
+                                className="relative inline-flex items-center justify-center px-8 py-2.5 rounded-xl border border-[#21409A] bg-transparent font-medium text-[#21409A] overflow-hidden group hover:border-[#21409A] hover:shadow-lg hover:shadow-blue-900/20 transition-all duration-300"
+                            >
+                                <span className="absolute inset-0 w-full h-full bg-[#21409A] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></span>
+                                <span className="relative group-hover:text-white transition-colors duration-300">Login</span>
+                            </Link>
+                        )}
                     </div>
                 </nav>
 
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 mt-10">
+                {/* ================= KONTEN HALAMAN ================= */}
+                <main className="max-w-[1200px] mx-auto px-4 sm:px-6 mt-10">
 
+                    {/* BLOK NOTIFIKASI SUKSES */}
                     {flash?.success && (
                         <div className="mb-8 p-4 rounded-2xl bg-green-50 border border-green-200 flex items-start gap-4 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="bg-[#00A651] text-white p-2 rounded-full shrink-0 shadow-sm">
@@ -223,29 +287,41 @@ export default function Create({ auth, items }) {
                             </div>
                         </div>
                     )}
-                    {flash?.error && (
-                        <div className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-bold shadow-sm">
-                            ⚠️ {flash.error}
+
+                    {/* BLOK NOTIFIKASI ERROR */}
+                    {(flash?.error || Object.keys(errors).length > 0) && (
+                        <div className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-bold shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span>⚠️</span>
+                                <h3 className="font-extrabold text-red-800">Sistem Menolak Pengajuan Anda:</h3>
+                            </div>
+                            {flash?.error && <p className="ml-6 mb-2">{flash.error}</p>}
+                            {Object.keys(errors).length > 0 && (
+                                <ul className="list-disc ml-10 font-medium text-xs space-y-1">
+                                    {Object.values(errors).map((err, i) => <li key={i}>{err}</li>)}
+                                </ul>
+                            )}
                         </div>
                     )}
 
+                    {/* HEADER JUDUL */}
                     <div className="mb-8">
-                        <div className="inline-flex items-center gap-2 bg-[#E6F6ED] text-[#00A651] text-xs font-bold px-3 py-1 rounded-full mb-3 tracking-wide">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        <div className="inline-flex items-center gap-2 bg-blue-50 text-[#21409A] text-xs font-bold px-3 py-1 rounded-full mb-3 tracking-wide">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                             FORMULIR HSSE
                         </div>
-                        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Ajukan Peminjaman APD</h1>
-                        <p className="text-sm text-gray-500 max-w-2xl leading-relaxed">Lengkapi detail peminjaman dan pilih perlengkapan yang Anda butuhkan.</p>
+                        <h1 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">Ajukan Peminjaman APD</h1>
+                        <p className="text-sm text-gray-500 max-w-2xl leading-relaxed">Lengkapi detail peminjaman dan pilih perlengkapan yang Anda butuhkan untuk keperluan lapangan.</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8" noValidate>
 
                         <div className="lg:col-span-8 space-y-8">
 
-                            {/* 3. TAMPILAN ERROR DI INPUT FORM */}
-                            <div className="bg-white rounded-[20px] shadow-sm border border-gray-200 overflow-hidden">
+                            {/* CARD 1: DETAIL PEMINJAM */}
+                            <div className="bg-white rounded-[24px] shadow-sm border border-gray-200 overflow-hidden">
                                 <div className="bg-gray-50/50 px-6 py-5 border-b border-gray-100 flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-[#21409A]">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                                     </div>
                                     <h2 className="text-lg font-bold text-gray-900">Detail Peminjam</h2>
@@ -261,24 +337,21 @@ export default function Create({ auth, items }) {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Tanggal Pinjam <span className="text-red-500">*</span></label>
-                                        <input type="date" required value={data.start_date} onChange={(e) => setData('start_date', e.target.value)} className={`w-full bg-white border ${errors.start_date ? 'border-red-500' : 'border-gray-300'} text-gray-900 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] transition-all`} />
-                                        {errors.start_date && <p className="text-red-500 text-[10px] mt-1">{errors.start_date}</p>}
+                                        <input type="date" required value={data.start_date} onChange={(e) => setData('start_date', e.target.value)} className={`w-full bg-white border ${errors.start_date ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} text-gray-900 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-[#21409A]/20 focus:border-[#21409A] transition-all`} />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Tanggal Kembali <span className="text-red-500">*</span></label>
-                                        <input type="date" required value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} className={`w-full bg-white border ${errors.end_date ? 'border-red-500' : 'border-gray-300'} text-gray-900 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] transition-all`} />
-                                        {errors.end_date && <p className="text-red-500 text-[10px] mt-1">{errors.end_date}</p>}
+                                        <input type="date" required value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} className={`w-full bg-white border ${errors.end_date ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} text-gray-900 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-[#21409A]/20 focus:border-[#21409A] transition-all`} />
                                     </div>
                                     <div className="md:col-span-2">
                                         <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Tujuan Keperluan <span className="text-red-500">*</span></label>
-                                        <textarea rows="3" required value={data.purpose} onChange={(e) => setData('purpose', e.target.value)} className={`w-full bg-white border ${errors.purpose ? 'border-red-500' : 'border-gray-300'} text-gray-900 rounded-xl px-4 py-3 text-sm font-medium outline-none resize-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] transition-all`} placeholder="Jelaskan secara singkat untuk keperluan apa APD ini dipinjam..."></textarea>
-                                        {errors.purpose && <p className="text-red-500 text-[10px] mt-1">{errors.purpose}</p>}
+                                        <textarea rows="3" required value={data.purpose} onChange={(e) => setData('purpose', e.target.value)} className={`w-full bg-white border ${errors.purpose ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} text-gray-900 rounded-xl px-4 py-3 text-sm font-medium outline-none resize-none focus:ring-2 focus:ring-[#21409A]/20 focus:border-[#21409A] transition-all`} placeholder="Jelaskan secara singkat untuk keperluan apa APD ini dipinjam..."></textarea>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* CARD 2: PILIH BARANG (KODE SAMA) */}
-                            <div className="bg-white rounded-[20px] shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                            {/* CARD 2: PILIH BARANG */}
+                            <div className="bg-white rounded-[24px] shadow-sm border border-gray-200 overflow-hidden flex flex-col">
                                 <div className="bg-gray-50/50 px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-[#00A651]"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg></div>
@@ -286,18 +359,17 @@ export default function Create({ auth, items }) {
                                     </div>
                                     <div className="relative w-full sm:max-w-xs">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div>
-                                        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white border border-gray-300 rounded-full pl-9 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] transition-all placeholder-gray-400 font-medium" placeholder="Cari nama perlengkapan..." />
+                                        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white border border-gray-300 rounded-full pl-9 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#21409A]/20 focus:border-[#21409A] transition-all placeholder-gray-400 font-medium" placeholder="Cari nama perlengkapan..." />
                                     </div>
                                 </div>
                                 <div className="p-4 sm:p-6 space-y-3">
-                                    {errors.selected_items && <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg mb-3">⚠️ {errors.selected_items}</div>}
                                     {filteredItems.length === 0 ? (
                                         <div className="text-center py-10"><p className="text-gray-500 font-medium text-sm">Barang "{searchTerm}" tidak ditemukan.</p></div>
                                     ) : (
                                         filteredItems.map((item) => {
                                             const isSelected = isItemSelected(item.id);
                                             return (
-                                                <div key={item.id} className={`border rounded-2xl transition-all duration-300 overflow-hidden ${isSelected ? 'border-[#00A651] ring-1 ring-[#00A651]/20 bg-green-50/10' : 'border-gray-200 bg-white hover:border-[#00A651]/50'}`}>
+                                                <div key={item.id} className={`border rounded-2xl transition-all duration-300 overflow-hidden ${isSelected ? 'border-[#00A651] ring-1 ring-[#00A651]/20 bg-green-50/10' : 'border-gray-200 bg-white hover:border-[#21409A]/30'}`}>
                                                     <div className="flex items-center justify-between p-4 cursor-pointer select-none" onClick={() => toggleItemExpansion(item.id)}>
                                                         <div className="flex items-center gap-4">
                                                             <div className="w-14 h-14 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0 p-1.5">
@@ -341,11 +413,11 @@ export default function Create({ auth, items }) {
                             </div>
                         </div>
 
-                        {/* KOLOM KANAN (SAMA SEPERTI SEBELUMNYA) */}
+                        {/* KOLOM KANAN: RINGKASAN */}
                         <div className="lg:col-span-4 relative">
                             <div className="sticky top-24 space-y-6">
-                                <div className="bg-white rounded-[20px] shadow-sm border border-[#00A651]/20 overflow-hidden flex flex-col">
-                                    <div className="bg-[#00A651] px-6 py-4 flex items-center gap-3">
+                                <div className="bg-white rounded-[24px] shadow-sm border border-[#21409A]/20 overflow-hidden flex flex-col">
+                                    <div className="bg-[#21409A] px-6 py-4 flex items-center gap-3">
                                         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                                         <h3 className="text-white font-bold text-lg">Ringkasan</h3>
                                     </div>
@@ -363,7 +435,7 @@ export default function Create({ auth, items }) {
                                                             <p className="text-sm font-bold text-gray-800">{item.name}</p>
                                                             <p className="text-xs font-medium text-gray-500 mt-0.5">{item.details}</p>
                                                         </div>
-                                                        <div className="font-extrabold text-[#00A651] bg-green-50 px-2 py-1 rounded text-sm shrink-0">{item.total} item</div>
+                                                        <div className="font-extrabold text-[#21409A] bg-blue-50 px-2 py-1 rounded text-sm shrink-0">{item.total} item</div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -372,7 +444,7 @@ export default function Create({ auth, items }) {
                                             <span className="text-sm font-bold text-gray-600">Total Pinjaman</span>
                                             <span className="text-xl font-black text-gray-900">{selectedSummary.totalItems} <span className="text-sm font-bold text-gray-500">Pcs</span></span>
                                         </div>
-                                        <button type="submit" disabled={processing || selectedSummary.totalItems === 0} className={`w-full py-3.5 rounded-full text-sm font-extrabold shadow-md transition-all flex justify-center items-center gap-2 transform hover:-translate-y-0.5 ${processing || selectedSummary.totalItems === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-[#00A651] hover:bg-[#008c44] text-white hover:shadow-lg'}`}>
+                                        <button type="submit" disabled={processing} className={`w-full py-3.5 rounded-xl text-sm font-extrabold shadow-md transition-all flex justify-center items-center gap-2 transform hover:-translate-y-0.5 ${processing ? 'bg-gray-400 cursor-not-allowed shadow-none' : 'bg-[#21409A] hover:bg-[#1a3380] text-white hover:shadow-lg'}`}>
                                             {processing ? 'MEMPROSES...' : 'AJUKAN SEKARANG'}
                                         </button>
                                     </div>
