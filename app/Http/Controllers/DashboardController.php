@@ -36,6 +36,34 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        // =================================================================
+        // 6. LOGIKA CHART: Ambil data 6 bulan terakhir untuk grafik
+        // =================================================================
+        $chartData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            // Mundur dari 5 bulan yang lalu hingga bulan ini
+            $date = Carbon::now()->subMonths($i);
+
+            // Hitung transaksi normal/tepat waktu bulan ini
+            $tepatWaktu = Transaction::whereMonth('created_at', $date->month)
+                ->whereYear('created_at', $date->year)
+                ->whereIn('status', ['selesai', 'dipinjam', 'menunggu'])
+                ->count();
+
+            // Hitung transaksi terlambat bulan ini
+            $terlambat = Transaction::whereMonth('created_at', $date->month)
+                ->whereYear('created_at', $date->year)
+                ->where('status', 'terlambat')
+                ->count();
+
+            // Masukkan ke array sesuai format yang dibaca Recharts React
+            $chartData[] = [
+                'name' => $date->translatedFormat('M'), // Menghasilkan 'Jan', 'Feb', dll.
+                'tepatWaktu' => $tepatWaktu,
+                'terlambat' => $terlambat,
+            ];
+        }
+
         // Lempar semua data ini ke React
         return Inertia::render('Dashboard', [
             'stats' => [
@@ -45,7 +73,8 @@ class DashboardController extends Controller
                 'pendingTransactions' => $pendingTransactions,
                 'lateTransactions' => $lateTransactions,
             ],
-            'recentTransactions' => $recentTransactions
+            'recentTransactions' => $recentTransactions,
+            'chartData' => $chartData // <--- Variabel chart dikirim ke React di sini!
         ]);
     }
 }

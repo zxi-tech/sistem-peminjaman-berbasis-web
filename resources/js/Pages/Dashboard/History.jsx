@@ -3,31 +3,20 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head } from '@inertiajs/react';
 
 export default function History({ auth, transactions }) {
-
-    // Dummy Data khusus arsip
-    const displayTransactions = transactions && transactions.length > 0 ? transactions : [
-        { id: 'TRX-2026001', name: 'Budi Santoso', nip: '82910023', items: 'Helm Safety (1), Sepatu Boots (1)', dates: '11 Mar - 13 Mar 2026', status: 'selesai', purpose: 'Inspeksi rutin sumur panas bumi area utara.' },
-        { id: 'TRX-2026003', name: 'Siti Aminah', nip: '82910045', items: 'Ear Plug (2), Goggles (1)', dates: '12 Mar - 12 Mar 2026', status: 'ditolak', purpose: 'Pengajuan ditolak karena stok Ear Plug sedang kosong di gudang utama.' },
-        { id: 'TRX-2026012', name: 'Hizkia Santoso', nip: '82910088', items: 'Coverall Onshore (1)', dates: '05 Mar - 08 Mar 2026', status: 'selesai', purpose: 'Perbaikan turbin uap sektor B.' },
-        { id: 'TRX-2026015', name: 'Andi Wijaya', nip: '82910012', items: 'Safety Shoes (1), Safety Gloves (2)', dates: '01 Mar - 02 Mar 2026', status: 'selesai', purpose: 'Pemindahan barang berat di gudang.' },
-        { id: 'TRX-2026018', name: 'Rian Hidayat', nip: '82910067', items: 'Gas Detector (1)', dates: '28 Feb - 28 Feb 2026', status: 'ditolak', purpose: 'Alat sedang dalam masa kalibrasi bulanan.' },
-    ];
+    // 1. HAPUS DUMMY, LANGSUNG GUNAKAN DATA DATABASE
+    const displayTransactions = transactions || [];
 
     const [activeTab, setActiveTab] = useState('semua');
     const [selectedTrx, setSelectedTrx] = useState(null);
-
-    // State khusus untuk Animasi React
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
 
-    // Fungsi buka modal dengan animasi ringan
     const openModal = (trx) => {
         setSelectedTrx(trx);
         setIsModalOpen(true);
         setTimeout(() => setIsAnimating(true), 10);
     };
 
-    // Fungsi tutup modal (dipercepat jadi 200ms)
     const closeModal = () => {
         setIsAnimating(false);
         setTimeout(() => {
@@ -41,13 +30,31 @@ export default function History({ auth, transactions }) {
         return trx.status === activeTab;
     });
 
+    // Helper Format Tanggal
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        try {
+            return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(dateString));
+        } catch (e) {
+            return dateString.split('T')[0];
+        }
+    };
+
+    // Helper Format Item
+    const getTransactionItems = (trx) => {
+        if (trx?.details && trx.details.length > 0) {
+            return trx.details.map(d => `${d.itemSize?.item?.name || 'Barang'} (x${d.quantity})`).join(', ');
+        }
+        return '-';
+    };
+
     const getStatusBadge = (status) => {
         const statusMap = {
             'selesai': { bg: 'bg-[#00A651]', text: 'text-white', shadow: 'shadow-[#00A651]/40', icon: '✅' },
             'ditolak': { bg: 'bg-[#ED1C24]', text: 'text-white', shadow: 'shadow-[#ED1C24]/40', icon: '❌' }
         };
-        const config = statusMap[status.toLowerCase()] || { bg: 'bg-gray-200', text: 'text-gray-700', shadow: '', icon: '📌' };
-        const label = status.charAt(0).toUpperCase() + status.slice(1);
+        const config = statusMap[status?.toLowerCase()] || { bg: 'bg-gray-200', text: 'text-gray-700', shadow: '', icon: '📌' };
+        const label = status ? status.charAt(0).toUpperCase() + status.slice(1) : '-';
         return (
             <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide shadow-md ${config.bg} ${config.text} ${config.shadow}`}>
                 <span className="text-[10px]">{config.icon}</span>{label}
@@ -55,7 +62,7 @@ export default function History({ auth, transactions }) {
         );
     };
 
-    const getInitials = (name) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
     return (
         <AdminLayout user={auth?.user}>
@@ -63,13 +70,11 @@ export default function History({ auth, transactions }) {
 
             <div className="w-full pb-12 relative animate-in fade-in duration-300">
 
-                {/* Header Halaman & Tombol Export */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                     <div>
                         <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Riwayat Peminjaman</h1>
                         <p className="text-sm text-gray-500 mt-1 font-medium">Arsip seluruh transaksi yang telah selesai dikembalikan atau ditolak.</p>
                     </div>
-
                     <button className="bg-[#107C41] hover:bg-[#0c6132] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 transform hover:-translate-y-1 duration-200">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         Export to Excel
@@ -77,8 +82,6 @@ export default function History({ auth, transactions }) {
                 </div>
 
                 <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
-
-                    {/* Toolbar */}
                     <div className="p-6 border-b border-gray-100 flex flex-col xl:flex-row justify-between items-center gap-4 bg-gray-50/50">
                         <div className="flex gap-2 bg-gray-100/80 p-1.5 rounded-xl w-full md:w-auto overflow-x-auto custom-scrollbar relative">
                             {['semua', 'selesai', 'ditolak'].map((tab) => (
@@ -96,14 +99,6 @@ export default function History({ auth, transactions }) {
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
-                            <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm hover:bg-gray-50 hover:border-gray-300 flex items-center justify-between gap-3 w-full sm:w-48 transition-all">
-                                <span className="flex items-center gap-2">
-                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                    Pilih Periode
-                                </span>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </button>
-
                             <div className="relative w-full sm:w-72 group">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <svg className="h-4 w-4 text-gray-400 group-focus-within:text-[#21409A] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -113,7 +108,6 @@ export default function History({ auth, transactions }) {
                         </div>
                     </div>
 
-                    {/* Tabel Data */}
                     <div className="overflow-x-auto custom-scrollbar min-h-[300px]">
                         <table className="w-full text-left whitespace-nowrap">
                             <thead>
@@ -130,22 +124,24 @@ export default function History({ auth, transactions }) {
                                 {filteredTransactions.length > 0 ? filteredTransactions.map((trx, index) => (
                                     <tr key={index} className="hover:bg-[#F4F5FA] transition-colors duration-200 group cursor-pointer" onClick={() => openModal(trx)}>
                                         <td className="px-6 py-4">
-                                            <span className="bg-gray-100 text-gray-500 font-bold px-3 py-1.5 rounded-lg text-xs font-mono border border-gray-200 group-hover:border-[#21409A]/30 group-hover:text-[#21409A] transition-colors duration-300">{trx.id}</span>
+                                            <span className="bg-gray-100 text-gray-500 font-bold px-3 py-1.5 rounded-lg text-xs font-mono border border-gray-200 group-hover:border-[#21409A]/30 group-hover:text-[#21409A] transition-colors duration-300">
+                                                TRX-{new Date(trx.created_at).getFullYear()}{String(trx.id).padStart(3, '0')}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 border border-gray-200 flex items-center justify-center font-bold text-xs shrink-0 group-hover:from-[#21409A]/10 group-hover:to-[#21409A]/20 group-hover:text-[#21409A] transition-all duration-300">{getInitials(trx.name)}</div>
+                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 border border-gray-200 flex items-center justify-center font-bold text-xs shrink-0 group-hover:from-[#21409A]/10 group-hover:to-[#21409A]/20 group-hover:text-[#21409A] transition-all duration-300">{getInitials(trx.user?.name)}</div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-gray-800">{trx.name}</span>
-                                                    <span className="text-[11px] text-gray-400 font-medium font-mono tracking-wide">NIP: {trx.nip || '-'}</span>
+                                                    <span className="text-sm font-bold text-gray-800">{trx.user?.name || 'User Terhapus'}</span>
+                                                    <span className="text-[11px] text-gray-400 font-medium font-mono tracking-wide">NIP: {trx.user?.nip || '-'}</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                                            <div className="truncate max-w-[200px]">{trx.items}</div>
+                                            <div className="truncate max-w-[200px]">{getTransactionItems(trx)}</div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                                            {trx.dates}
+                                            {formatDate(trx.start_date)} - {formatDate(trx.end_date)}
                                         </td>
                                         <td className="px-6 py-4 text-center">{getStatusBadge(trx.status)}</td>
                                         <td className="px-6 py-4 text-center">
@@ -162,7 +158,7 @@ export default function History({ auth, transactions }) {
                                         <td colSpan="6" className="px-6 py-20 text-center">
                                             <div className="flex flex-col items-center justify-center text-gray-400">
                                                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                                                    <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                                    <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                                                 </div>
                                                 <p className="text-sm font-medium">Tidak ada arsip transaksi yang cocok.</p>
                                             </div>
@@ -175,76 +171,79 @@ export default function History({ auth, transactions }) {
                 </div>
             </div>
 
-            {/* ================= MODAL DETAIL ARSIP (ANIMASI RINGAN & CEPAT) ================= */}
             {isModalOpen && selectedTrx && (
                 <div
-                    // Latar belakang diubah jadi gray-900 biasa tanpa blur, transisi opacity 200ms
                     className={`fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50 transition-opacity duration-200 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
                     onClick={closeModal}
                 >
                     <div
-                        // Modal content dengan scale sangat tipis (95% ke 100%) tanpa translate-y yang berat
                         className={`bg-white rounded-[24px] shadow-2xl w-full max-w-xl flex flex-col overflow-hidden transform transition-all duration-200 ease-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Aksen 4 Warna Pertamina */}
                         <div className="h-1.5 w-full flex">
-                            <div className="bg-[#21409A] flex-1"></div> {/* Biru */}
-                            <div className="bg-[#00A651] flex-1"></div> {/* Hijau */}
-                            <div className="bg-[#FBBF24] flex-1"></div> {/* Kuning */}
-                            <div className="bg-[#ED1C24] flex-1"></div> {/* Merah */}
+                            <div className="bg-[#21409A] flex-1"></div>
+                            <div className="bg-[#00A651] flex-1"></div>
+                            <div className="bg-[#FBBF24] flex-1"></div>
+                            <div className="bg-[#ED1C24] flex-1"></div>
                         </div>
 
-                        {/* Header Modal */}
                         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
                             <div>
                                 <h2 className="text-lg font-bold text-[#21409A] tracking-tight">Detail Arsip Transaksi</h2>
-                                <p className="text-[10px] text-gray-500 font-mono mt-1 px-2 py-0.5 bg-gray-100 rounded-md inline-block border border-gray-200">{selectedTrx.id}</p>
+                                <p className="text-[10px] text-gray-500 font-mono mt-1 px-2 py-0.5 bg-gray-100 rounded-md inline-block border border-gray-200">
+                                    TRX-{new Date(selectedTrx.created_at).getFullYear()}{String(selectedTrx.id).padStart(3, '0')}
+                                </p>
                             </div>
                             <div>
                                 {getStatusBadge(selectedTrx.status)}
                             </div>
                         </div>
 
-                        {/* Body Modal */}
                         <div className="p-6 overflow-y-auto bg-gray-50 flex-1 custom-scrollbar max-h-[70vh]">
-
-                            {/* Profil Peminjam */}
                             <div className="flex items-center gap-3 mb-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#21409A]/10 to-[#00A651]/10 text-[#21409A] border border-[#21409A]/20 flex items-center justify-center font-black text-lg">{getInitials(selectedTrx.name)}</div>
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#21409A]/10 to-[#00A651]/10 text-[#21409A] border border-[#21409A]/20 flex items-center justify-center font-black text-lg">{getInitials(selectedTrx.user?.name)}</div>
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-900">{selectedTrx.name}</h3>
+                                    <h3 className="text-sm font-bold text-gray-900">{selectedTrx.user?.name || 'User Terhapus'}</h3>
                                     <div className="flex items-center gap-2 mt-0.5">
                                         <span className="text-[11px] text-gray-500 font-medium font-mono bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                                            🆔 NIP: {selectedTrx.nip || '-'}
+                                            🆔 NIP: {selectedTrx.user?.nip || '-'}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Detail Peminjaman */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                                     <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                                         <span className="w-4 h-4 rounded bg-amber-50 text-amber-500 flex items-center justify-center"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></span>
-                                        Periode
+                                        Mulai Pinjam
                                     </p>
-                                    <p className="text-xs font-bold text-gray-800">{selectedTrx.dates}</p>
+                                    <p className="text-xs font-bold text-gray-800">{formatDate(selectedTrx.start_date)}</p>
                                 </div>
                                 <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                                     <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                                         <span className="w-4 h-4 rounded bg-blue-50 text-blue-500 flex items-center justify-center"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg></span>
-                                        Item Dipinjam
+                                        Batas Pengembalian
                                     </p>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {selectedTrx.items ? selectedTrx.items.split(',').map((item, i) => (
-                                            <span key={i} className="text-[11px] font-bold text-[#21409A] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded flex items-center">{item.trim()}</span>
-                                        )) : '-'}
-                                    </div>
+                                    <p className="text-xs font-bold text-gray-800">{formatDate(selectedTrx.end_date)}</p>
                                 </div>
                             </div>
 
-                            {/* Alasan / Keperluan */}
+                            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-4">
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Item Dipinjam</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {selectedTrx.details && selectedTrx.details.length > 0 ? (
+                                        selectedTrx.details.map((d, i) => (
+                                            <span key={i} className="text-[11px] font-bold text-[#21409A] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded flex items-center">
+                                                {d.itemSize?.item?.name || 'Barang'} ({d.itemSize?.size_name}) x{d.quantity}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span className="text-[11px] text-gray-500 italic">Tidak ada detail item</span>
+                                    )}
+                                </div>
+                            </div>
+
                             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden">
                                 <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${selectedTrx.status === 'ditolak' ? 'bg-[#ED1C24]' : 'bg-[#00A651]'}`}></div>
                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 pl-2">
@@ -254,13 +253,11 @@ export default function History({ auth, transactions }) {
                                     {selectedTrx.status === 'ditolak' ? 'Alasan Penolakan' : 'Keperluan Peminjaman'}
                                 </p>
                                 <p className={`text-xs font-medium leading-relaxed pl-2 ${selectedTrx.status === 'ditolak' ? 'text-[#ED1C24]' : 'text-gray-700'}`}>
-                                    {selectedTrx.purpose || '-'}
+                                    {selectedTrx.notes || selectedTrx.purpose || '-'}
                                 </p>
                             </div>
-
                         </div>
 
-                        {/* Footer Modal */}
                         <div className="px-6 py-4 border-t border-gray-100 bg-white flex justify-end">
                             <button
                                 onClick={closeModal}

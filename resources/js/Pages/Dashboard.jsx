@@ -1,24 +1,19 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-export default function Dashboard({ auth, stats, recentTransactions }) {
-
-    // Data grafik dummy
-    const chartData = [
-        { name: 'Jan', tepatWaktu: 18, terlambat: 4 },
-        { name: 'Feb', tepatWaktu: 23, terlambat: 2 },
-        { name: 'Mar', tepatWaktu: 19, terlambat: 3 },
-        { name: 'Apr', tepatWaktu: 25, terlambat: 3 },
-        { name: 'May', tepatWaktu: 16, terlambat: 2 },
-        { name: 'Jun', tepatWaktu: 21, terlambat: 3 },
-    ];
+// 👇 TERIMA PROP chartData DARI LARAVEL (Beri default array kosong) 👇
+export default function Dashboard({ auth, stats, recentTransactions, chartData = [] }) {
 
     // ================= STATE & FUNGSI MODAL =================
     const [selectedTrx, setSelectedTrx] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
+
+    const { data, setData, reset } = useForm({
+        notes: ''
+    });
 
     const openModal = (trx) => {
         setSelectedTrx(trx);
@@ -31,6 +26,7 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
         setTimeout(() => {
             setIsModalOpen(false);
             setSelectedTrx(null);
+            reset();
         }, 200);
     };
 
@@ -40,20 +36,18 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
     };
 
     // ================= HELPER FORMATTER =================
-    // 1. Mengubah "2026-04-07T00:00:00.000000Z" menjadi "07 Apr 2026"
     const formatDate = (dateString) => {
         if (!dateString) return '-';
         try {
             const date = new Date(dateString);
             return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
         } catch (e) {
-            return dateString.split('T')[0]; // Fallback jika gagal
+            return dateString.split('T')[0];
         }
     };
 
-    // 2. Merangkai array detail barang menjadi teks "Helm (x2), Sepatu (x1)"
     const getTransactionItems = (trx) => {
-        if (trx?.items) return trx.items; // Jika backend sudah format
+        if (trx?.items) return trx.items;
         if (trx?.details && trx.details.length > 0) {
             return trx.details.map(d => {
                 const itemName = d.itemSize?.item?.name || d.item_size?.item?.name || 'Barang';
@@ -64,7 +58,6 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
         return '-';
     };
 
-    // 3. Merender badge status dengan warna soft UI
     const getStatusBadge = (status) => {
         switch (status?.toLowerCase()) {
             case 'menunggu':
@@ -101,6 +94,7 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                 {/* ================= TOP SECTION (KARTU & GRAFIK) ================= */}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 mb-6">
                     <div className="col-span-1 lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-5">
+
                         {/* Kartu 1: Total Pengguna */}
                         <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 group">
                             <div className="flex justify-between items-start">
@@ -163,13 +157,13 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                         </div>
                     </div>
 
-                    {/* AREA KANAN: Grafik Recharts */}
+                    {/* AREA KANAN: Grafik Recharts Terhubung Database */}
                     <div className="col-span-1 lg:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col min-h-[250px] hover:shadow-md transition-shadow duration-300">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-sm font-bold text-gray-800">Peminjaman per Bulan</h3>
-                            <button className="text-xs text-blue-600 hover:text-blue-800 font-medium">Lihat Detail</button>
+                            <h3 className="text-sm font-bold text-gray-800">Peminjaman 6 Bulan Terakhir</h3>
                         </div>
                         <div className="flex-1 w-full min-h-[200px]">
+                            {/* Panggil chartData dari Laravel di properti data */}
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={chartData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }} barSize={18}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
@@ -215,7 +209,6 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                                             onClick={() => openModal(trx)}
                                             className="hover:bg-slate-50 transition-colors group cursor-pointer"
                                         >
-                                            {/* Format ID Peminjaman (misal: TRX-2026001) */}
                                             <td className="px-6 py-4 text-sm font-medium text-gray-900">
                                                 TRX-{new Date(trx.created_at || new Date()).getFullYear()}{String(trx.id || trx.raw_id || 0).padStart(3, '0')}
                                             </td>
@@ -224,12 +217,10 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                                                 {trx.user?.name || trx.name || 'User Terhapus'}
                                             </td>
 
-                                            {/* Tampilkan Teks Item dengan fungsi Helper */}
                                             <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate font-medium">
                                                 {getTransactionItems(trx)}
                                             </td>
 
-                                            {/* Tampilkan Tanggal Cantik */}
                                             <td className="px-6 py-4 text-sm text-gray-500">
                                                 {formatDate(trx.start_date || trx.dates?.split('-')[0]?.trim())}
                                             </td>
@@ -252,7 +243,7 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                                     <tr>
                                         <td colSpan="6" className="px-6 py-12 text-center">
                                             <div className="flex flex-col items-center justify-center text-gray-400">
-                                                <svg className="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                                <svg className="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                                                 <p className="text-sm">Belum ada data transaksi peminjaman.</p>
                                             </div>
                                         </td>
@@ -263,7 +254,6 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                         </table>
                     </div>
                 </div>
-
             </div>
 
             {/* ================= MODAL EKSEKUSI TRANSAKSI (READ-ONLY DI DASHBOARD) ================= */}
@@ -276,7 +266,6 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                         className={`bg-white rounded-[24px] shadow-2xl w-full max-w-xl flex flex-col overflow-hidden transform transition-all duration-200 ease-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Aksen 4 Warna PGE */}
                         <div className="h-1.5 w-full flex">
                             <div className="bg-[#21409A] flex-1"></div>
                             <div className="bg-[#00A651] flex-1"></div>
@@ -284,7 +273,6 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                             <div className="bg-[#ED1C24] flex-1"></div>
                         </div>
 
-                        {/* Header Modal */}
                         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
                             <div>
                                 <h2 className="text-lg font-bold text-gray-900 tracking-tight">Detail Transaksi</h2>
@@ -297,7 +285,6 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                             </button>
                         </div>
 
-                        {/* Body Modal */}
                         <div className="p-6 overflow-y-auto bg-gray-50 flex-1 custom-scrollbar max-h-[65vh]">
                             <div className="flex items-center justify-between mb-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                                 <div className="flex items-center gap-3">
@@ -323,7 +310,6 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                                 </div>
                             </div>
 
-                            {/* Tampilkan daftar item menggunakan fungsi Helper */}
                             <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-4">
                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Item yang Dipinjam</p>
                                 <p className="text-xs font-bold text-gray-800 leading-snug">
@@ -337,7 +323,6 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                             </div>
                         </div>
 
-                        {/* Footer Modal (Read-Only) */}
                         <div className="px-6 py-4 border-t border-gray-100 bg-white flex justify-between items-center">
                             <p className="text-xs text-gray-400 italic hidden sm:block">Untuk mengeksekusi, buka halaman Daftar Peminjaman.</p>
                             <Link href={route('transactions.index')} className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors w-full sm:w-auto text-center shadow-sm">
@@ -347,7 +332,6 @@ export default function Dashboard({ auth, stats, recentTransactions }) {
                     </div>
                 </div>
             )}
-
         </AdminLayout>
     );
 }
