@@ -50,6 +50,17 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // 👇 SATPAM PENGECEK STATUS AKUN 👇
+        // Jika statusnya bukan "Aktif", langsung tendang keluar!
+        if (Auth::user()->status === 'Nonaktif' || Auth::user()->status === 'Cuti') {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Akses ditolak! Akun Anda sedang ditangguhkan atau cuti. Silakan hubungi Admin.',
+            ]);
+        }
+        // 👆 BATAS PENGECEKAN 👆
+
         RateLimiter::clear($this->throttleKey());
     }
 
@@ -81,6 +92,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('email')) . '|' . $this->ip());
     }
 }

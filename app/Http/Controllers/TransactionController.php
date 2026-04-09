@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Exports\TransactionsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class TransactionController extends Controller
 {
@@ -18,9 +20,7 @@ class TransactionController extends Controller
             ->latest()
             ->get()
             ->map(function ($trx) {
-                
-                // MENGGABUNGKAN NAMA BARANG, UKURAN, DAN JUMLAH
-                // Hasil: "Safety Helmet (All Size) x2, Sepatu Safety (40) x1"
+
                 $itemsList = $trx->details->map(function ($detail) {
                     $itemName = $detail->itemSize->item->name;
                     $sizeName = $detail->itemSize->size_name;
@@ -30,14 +30,15 @@ class TransactionController extends Controller
 
                 return [
                     'raw_id' => $trx->id,
-                    'id' => 'TRX-' . Carbon::parse($trx->created_at)->format('Y') . str_pad($trx->id, 3, '0', STR_PAD_LEFT),
+                    'id' => 'HSSE-' . Carbon::parse($trx->created_at)->format('Y') . str_pad($trx->id, 3, '0', STR_PAD_LEFT),
                     'name' => $trx->user->name ?? 'User Dihapus',
-                    'nip' => $trx->user->nip ?? '-', // <-- NIP ditambahkan di sini
-                    'department' => $trx->user->department ?? '-', // <-- Ambil departemen asli
-                    'items' => $itemsList, // <-- Gunakan list yang sudah ada jumlahnya
+                    'nip' => $trx->user->nip ?? '-',
+                    'department' => $trx->user->department ?? '-',
+                    'items' => $itemsList,
                     'dates' => Carbon::parse($trx->start_date)->format('d M') . ' - ' . Carbon::parse($trx->end_date)->format('d M Y'),
                     'status' => $trx->status,
                     'purpose' => $trx->purpose,
+                    'notes' => $trx->notes, // 👇 PERBAIKAN 1: Kirim notes ke React
                 ];
             });
 
@@ -59,17 +60,25 @@ class TransactionController extends Controller
         try {
             $transaction = Transaction::with('details.itemSize')->findOrFail($id);
 
+            // 👇 PERBAIKAN 2: Simpan 'notes' ke database saat di-update 👇
             if ($validated['action'] === 'approve') {
-                $transaction->update(['status' => 'dipinjam']);
-            } 
-            elseif ($validated['action'] === 'reject') {
-                $transaction->update(['status' => 'ditolak']);
+                $transaction->update([
+                    'status' => 'dipinjam',
+                    'notes' => $validated['notes']
+                ]);
+            } elseif ($validated['action'] === 'reject') {
+                $transaction->update([
+                    'status' => 'ditolak',
+                    'notes' => $validated['notes']
+                ]);
                 foreach ($transaction->details as $detail) {
                     $detail->itemSize->increment('stock', $detail->quantity);
                 }
-            } 
-            elseif ($validated['action'] === 'return') {
-                $transaction->update(['status' => 'selesai']);
+            } elseif ($validated['action'] === 'return') {
+                $transaction->update([
+                    'status' => 'selesai',
+                    'notes' => $validated['notes']
+                ]);
                 foreach ($transaction->details as $detail) {
                     $detail->itemSize->increment('stock', $detail->quantity);
                 }
@@ -77,7 +86,6 @@ class TransactionController extends Controller
 
             DB::commit();
             return back()->with('success', 'Status transaksi berhasil diperbarui!');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
@@ -92,8 +100,7 @@ class TransactionController extends Controller
             ->latest()
             ->get()
             ->map(function ($trx) {
-                
-                // PERBAIKAN FORMAT DI HALAMAN HISTORY
+
                 $itemsList = $trx->details->map(function ($detail) {
                     $itemName = $detail->itemSize->item->name;
                     $sizeName = $detail->itemSize->size_name;
@@ -103,7 +110,7 @@ class TransactionController extends Controller
 
                 return [
                     'raw_id' => $trx->id,
-                    'id' => 'TRX-' . Carbon::parse($trx->created_at)->format('Y') . str_pad($trx->id, 3, '0', STR_PAD_LEFT),
+                    'id' => 'HSSE-' . Carbon::parse($trx->created_at)->format('Y') . str_pad($trx->id, 3, '0', STR_PAD_LEFT),
                     'name' => $trx->user->name ?? 'User Dihapus',
                     'nip' => $trx->user->nip ?? '-',
                     'department' => $trx->user->department ?? '-',
@@ -111,11 +118,40 @@ class TransactionController extends Controller
                     'dates' => Carbon::parse($trx->start_date)->format('d M') . ' - ' . Carbon::parse($trx->end_date)->format('d M Y'),
                     'status' => $trx->status,
                     'purpose' => $trx->purpose,
+                    'notes' => $trx->notes, // 👇 PERBAIKAN 3: Kirim notes ke React History
                 ];
             });
 
         return Inertia::render('Dashboard/History', [
             'transactions' => $transactions
         ]);
+    }
+
+    // =========================================================================
+    // 4. EXPORT DATA KE EXCEL (.XLSX ASLI)
+    // =========================================================================
+    public function exportExcel(Request $request)
+    {
+        $query = \App\Models\Transaction::with(['user', 'details.itemSize.item'])
+            ->whereIn('status', ['selesai', 'ditolak']);
+
+        $type = $request->query('type', 'semua');
+
+        if ($type === 'bulan_ini') {
+            $query->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year);
+        } elseif ($type === 'tahun_ini') {
+            $query->whereYear('created_at', now()->year);
+        } elseif ($type === 'custom' && $request->start_date && $request->end_date) {
+            $query->whereBetween('created_at', [
+                $request->start_date . ' 00:00:00',
+                $request->end_date . ' 23:59:59'
+            ]);
+        }
+
+        $transactions = $query->latest()->get();
+
+        $fileName = 'Riwayat_Peminjaman_HSSE_' . date('Y-m-d_H-i') . '.xlsx';
+        return Excel::download(new TransactionsExport($transactions), $fileName);
     }
 }

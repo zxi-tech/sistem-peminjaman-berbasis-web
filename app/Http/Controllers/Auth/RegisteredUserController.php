@@ -31,20 +31,32 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
+        // 👇 1. MODIFIKASI VALIDASI DENGAN PEMBATASAN DOMAIN 👇
         $request->validate([
             'nip' => 'required|string|max:255|unique:users,nip',
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:users,email',
+            'email' => [
+                'required',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                'unique:users,email',
+                'ends_with:@pertamina.com,@mitrakerja.pertamina.com' // <-- Gembok Domain
+            ],
             'phone' => 'required|string|max:255|unique:users,phone',
             'department' => 'required|string|max:255',
             'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
+        ], [
+            // Pesan error agar React bisa menampilkannya dengan bahasa Indonesia
+            'email.ends_with' => 'Pendaftaran gagal! Anda wajib menggunakan email @pertamina.com atau @mitrakerja.pertamina.com.',
         ]);
 
-        // 1. Generate 6 Digit Kode Acak untuk OTP
+        // 2. Generate 6 Digit Kode Acak untuk OTP
         $emailOtp = rand(100000, 999999);
         $phoneOtp = rand(100000, 999999);
 
-        // 2. Simpan Data beserta OTP-nya
+        // 3. Simpan Data beserta OTP-nya
         $user = \App\Models\User::create([
             'nip' => $request->nip,
             'name' => $request->name,
@@ -59,10 +71,10 @@ class RegisteredUserController extends Controller
         // (Di kehidupan nyata, di sini Anda men-trigger API Email & WhatsApp untuk mengirim $emailOtp dan $phoneOtp ke user)
         // Untuk testing, Laravel otomatis mencatat kode ini di database Anda.
 
-        // 3. Login user (agar sistem tahu siapa yang sedang diverifikasi)
+        // 4. Login user (agar sistem tahu siapa yang sedang diverifikasi)
         \Illuminate\Support\Facades\Auth::login($user);
 
-        // 4. JANGAN KE DASHBOARD! Arahkan paksa ke Halaman Verifikasi Email
+        // 5. JANGAN KE DASHBOARD! Arahkan paksa ke Halaman Verifikasi Email
         return redirect()->route('otp.email.view');
     }
 }

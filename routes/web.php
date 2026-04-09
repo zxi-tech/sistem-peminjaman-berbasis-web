@@ -66,10 +66,15 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
 
     // Manajemen User (Admin)
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
+
+    Route::put('/users/{id}', [\App\Http\Controllers\UserController::class, 'update'])->name('users.update');
 });
 
 Route::get('/contact', function () {
     return Inertia::render('Contact');
 })->name('contact');
+
+// Tambahkan baris ini di routes/web.php
+Route::get('/admin/transactions/export', [\App\Http\Controllers\TransactionController::class, 'exportExcel'])->name('transactions.export');
 
 require __DIR__ . '/auth.php';

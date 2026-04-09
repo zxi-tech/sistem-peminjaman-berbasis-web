@@ -3,7 +3,6 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 
 export default function Transactions({ auth, transactions }) {
-    // 1. HAPUS DUMMY, LANGSUNG GUNAKAN DATA DATABASE
     const displayTransactions = transactions || [];
 
     const [activeTab, setActiveTab] = useState('semua');
@@ -32,11 +31,12 @@ export default function Transactions({ auth, transactions }) {
         }, 200);
     };
 
-    // 2. KONEKSI ASLI KE BACKEND LARAVEL (Menggunakan ID Asli Database)
+    // KONEKSI ASLI KE BACKEND LARAVEL
+    // Kita gunakan raw_id (angka asli seperti 1, 2, 3) untuk update ke database
     const handleAction = (e, actionType) => {
         e.preventDefault();
 
-        router.put(route('transactions.update', selectedTrx.id), {
+        router.put(route('transactions.update', selectedTrx.raw_id), {
             action: actionType,
             notes: data.notes
         }, {
@@ -49,24 +49,6 @@ export default function Transactions({ auth, transactions }) {
         if (activeTab === 'semua') return true;
         return trx.status === activeTab;
     });
-
-    // Helper Format Tanggal
-    const formatDate = (dateString) => {
-        if (!dateString) return '-';
-        try {
-            return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(dateString));
-        } catch (e) {
-            return dateString.split('T')[0];
-        }
-    };
-
-    // Helper Format Item
-    const getTransactionItems = (trx) => {
-        if (trx?.details && trx.details.length > 0) {
-            return trx.details.map(d => `${d.itemSize?.item?.name || 'Barang'} (x${d.quantity})`).join(', ');
-        }
-        return '-';
-    };
 
     // Badge Status Premium
     const getStatusBadge = (status) => {
@@ -138,24 +120,28 @@ export default function Transactions({ auth, transactions }) {
                                 {filteredTransactions.length > 0 ? filteredTransactions.map((trx, index) => (
                                     <tr key={index} className="hover:bg-[#F4F5FA] transition-colors duration-200 group cursor-pointer" onClick={() => openModal(trx)}>
                                         <td className="px-6 py-4">
+                                            {/* ID sudah diformat dari Backend */}
                                             <span className="bg-gray-100 text-gray-500 font-bold px-3 py-1.5 rounded-lg text-xs font-mono border border-gray-200 group-hover:border-[#00A651]/30 group-hover:text-[#00A651] transition-colors duration-300">
-                                                TRX-{new Date(trx.created_at).getFullYear()}{String(trx.id).padStart(3, '0')}
+                                                {trx.id}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 border border-gray-200 flex items-center justify-center font-bold text-xs shrink-0 group-hover:from-[#00A651]/10 group-hover:to-[#00A651]/20 group-hover:text-[#00A651] transition-all duration-300">{getInitials(trx.user?.name)}</div>
+                                                {/* Panggil trx.name secara langsung */}
+                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 border border-gray-200 flex items-center justify-center font-bold text-xs shrink-0 group-hover:from-[#00A651]/10 group-hover:to-[#00A651]/20 group-hover:text-[#00A651] transition-all duration-300">{getInitials(trx.name)}</div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-gray-800">{trx.user?.name || 'User Terhapus'}</span>
-                                                    <span className="text-[11px] text-gray-400 font-medium font-mono tracking-wide">NIP: {trx.user?.nip || '-'}</span>
+                                                    <span className="text-sm font-bold text-gray-800">{trx.name}</span>
+                                                    <span className="text-[11px] text-gray-400 font-medium font-mono tracking-wide">NIP: {trx.nip}</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                                            <div className="truncate max-w-[200px]">{getTransactionItems(trx)}</div>
+                                            {/* Panggil trx.items secara langsung */}
+                                            <div className="truncate max-w-[200px]">{trx.items}</div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                                            {formatDate(trx.start_date)} - {formatDate(trx.end_date)}
+                                            {/* Panggil trx.dates secara langsung */}
+                                            {trx.dates}
                                         </td>
                                         <td className="px-6 py-4 text-center">{getStatusBadge(trx.status)}</td>
                                         <td className="px-6 py-4 text-center">
@@ -185,6 +171,7 @@ export default function Transactions({ auth, transactions }) {
                 </div>
             </div>
 
+            {/* MODAL EKSEKUSI */}
             {isModalOpen && selectedTrx && (
                 <div
                     className={`fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50 transition-opacity duration-200 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
@@ -205,7 +192,7 @@ export default function Transactions({ auth, transactions }) {
                             <div>
                                 <h2 className="text-lg font-bold text-gray-900 tracking-tight">Tindak Lanjut Transaksi</h2>
                                 <p className="text-[10px] text-gray-500 font-mono mt-1 px-2 py-0.5 bg-gray-100 rounded-md inline-block border border-gray-200">
-                                    TRX-{new Date(selectedTrx.created_at).getFullYear()}{String(selectedTrx.id).padStart(3, '0')}
+                                    {selectedTrx.id}
                                 </p>
                             </div>
                             <button onClick={closeModal} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-colors">
@@ -216,38 +203,25 @@ export default function Transactions({ auth, transactions }) {
                         <div className="p-6 overflow-y-auto bg-gray-50 flex-1 custom-scrollbar max-h-[65vh]">
                             <div className="flex items-center justify-between mb-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-[#F4F5FA] text-[#21409A] flex items-center justify-center font-black text-sm">{getInitials(selectedTrx.user?.name)}</div>
+                                    <div className="w-10 h-10 rounded-full bg-[#F4F5FA] text-[#21409A] flex items-center justify-center font-black text-sm">{getInitials(selectedTrx.name)}</div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-gray-900">{selectedTrx.user?.name || 'User Terhapus'}</h3>
-                                        <p className="text-[10px] text-gray-500 font-mono">NIP: {selectedTrx.user?.nip || '-'}</p>
+                                        <h3 className="text-sm font-bold text-gray-900">{selectedTrx.name}</h3>
+                                        <p className="text-[10px] text-gray-500 font-mono">NIP: {selectedTrx.nip}</p>
                                     </div>
                                 </div>
                                 <div>{getStatusBadge(selectedTrx.status)}</div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div className="mb-4">
                                 <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Mulai Pinjam</p>
-                                    <p className="text-xs font-bold text-gray-800">{formatDate(selectedTrx.start_date)}</p>
-                                </div>
-                                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Batas Pengembalian</p>
-                                    <p className="text-xs font-bold text-gray-800 leading-snug">{formatDate(selectedTrx.end_date)}</p>
+                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Durasi Peminjaman</p>
+                                    <p className="text-xs font-bold text-[#21409A]">{selectedTrx.dates}</p>
                                 </div>
                             </div>
 
-                            {/* Daftar Item Modal Asli */}
                             <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-4">
                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Item Requested</p>
-                                <ul className="text-xs font-medium text-gray-700 list-disc list-inside ml-2">
-                                    {selectedTrx.details && selectedTrx.details.length > 0 ? (
-                                        selectedTrx.details.map((d, i) => (
-                                            <li key={i} className="mb-1">{d.itemSize?.item?.name || 'Barang'} - {d.itemSize?.size_name} (x{d.quantity})</li>
-                                        ))
-                                    ) : (
-                                        <p className="text-gray-500 italic">Tidak ada item</p>
-                                    )}
-                                </ul>
+                                <p className="text-xs font-bold text-gray-800 leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">{selectedTrx.items}</p>
                             </div>
 
                             <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-4">
@@ -255,7 +229,6 @@ export default function Transactions({ auth, transactions }) {
                                 <p className="text-xs font-medium text-gray-700">{selectedTrx.purpose || 'Tidak ada catatan keperluan.'}</p>
                             </div>
 
-                            {/* Kotak Input Catatan Admin */}
                             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm focus-within:border-[#21409A] transition-colors">
                                 <label className="text-[9px] font-bold text-[#21409A] uppercase tracking-widest mb-2 block">📝 Catatan Admin (Opsional)</label>
                                 <textarea
@@ -268,7 +241,6 @@ export default function Transactions({ auth, transactions }) {
                             </div>
                         </div>
 
-                        {/* Footer Modal Action Buttons */}
                         <div className="px-6 py-4 border-t border-gray-100 bg-white">
                             {selectedTrx.status === 'menunggu' ? (
                                 <div className="flex justify-end gap-3">

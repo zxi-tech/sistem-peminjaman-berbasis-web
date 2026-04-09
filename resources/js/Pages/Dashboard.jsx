@@ -210,7 +210,7 @@ export default function Dashboard({ auth, stats, recentTransactions, chartData =
                                             className="hover:bg-slate-50 transition-colors group cursor-pointer"
                                         >
                                             <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                TRX-{new Date(trx.created_at || new Date()).getFullYear()}{String(trx.id || trx.raw_id || 0).padStart(3, '0')}
+                                                HSSE-{new Date(trx.created_at || new Date()).getFullYear()}{String(trx.id || trx.raw_id || 0).padStart(3, '0')}
                                             </td>
 
                                             <td className="px-6 py-4 text-sm text-gray-600">
@@ -277,7 +277,7 @@ export default function Dashboard({ auth, stats, recentTransactions, chartData =
                             <div>
                                 <h2 className="text-lg font-bold text-gray-900 tracking-tight">Detail Transaksi</h2>
                                 <p className="text-[10px] text-gray-500 font-mono mt-1 px-2 py-0.5 bg-gray-100 rounded-md inline-block border border-gray-200">
-                                    TRX-{new Date(selectedTrx.created_at || new Date()).getFullYear()}{String(selectedTrx.id || selectedTrx.raw_id || 0).padStart(3, '0')}
+                                    HSSE-{new Date(selectedTrx.created_at || new Date()).getFullYear()}{String(selectedTrx.id || selectedTrx.raw_id || 0).padStart(3, '0')}
                                 </p>
                             </div>
                             <button onClick={closeModal} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-colors">

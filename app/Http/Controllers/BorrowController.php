@@ -48,7 +48,7 @@ class BorrowController extends Controller
                 })->join(', ');
 
                 return [
-                    'id' => 'TRX-' . Carbon::parse($trx->created_at)->format('Y') . str_pad($trx->id, 3, '0', STR_PAD_LEFT),
+                    'id' => 'HSSE-' . Carbon::parse($trx->created_at)->format('Y') . str_pad($trx->id, 3, '0', STR_PAD_LEFT),
                     'items' => $itemsList,
                     'dates' => Carbon::parse($trx->start_date)->format('d M') . ' - ' . Carbon::parse($trx->end_date)->format('d M Y'),
                     'status' => $trx->status,
