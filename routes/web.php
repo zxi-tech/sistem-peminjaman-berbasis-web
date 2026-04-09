@@ -68,6 +68,11 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
 
     Route::put('/users/{id}', [\App\Http\Controllers\UserController::class, 'update'])->name('users.update');
+
+    // Pesan Masuk (Admin)
+    Route::get('/messages', [\App\Http\Controllers\ContactMessageController::class, 'index'])->name('messages.index');
+    Route::put('/messages/{id}/read', [\App\Http\Controllers\ContactMessageController::class, 'markAsRead'])->name('messages.read');
+    Route::delete('/messages/{id}', [\App\Http\Controllers\ContactMessageController::class, 'destroy'])->name('messages.destroy');
 });
 
 Route::get('/contact', function () {
@@ -76,5 +81,8 @@ Route::get('/contact', function () {
 
 // Tambahkan baris ini di routes/web.php
 Route::get('/admin/transactions/export', [\App\Http\Controllers\TransactionController::class, 'exportExcel'])->name('transactions.export');
+
+// Rute untuk memproses form Contact Us
+Route::post('/contact-message', [\App\Http\Controllers\ContactMessageController::class, 'store'])->name('contact.store');
 
 require __DIR__ . '/auth.php';

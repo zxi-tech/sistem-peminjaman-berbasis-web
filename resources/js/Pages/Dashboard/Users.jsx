@@ -1,35 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, Link } from '@inertiajs/react';
 
-export default function Users({ auth, users }) {
+export default function Users({ auth, users, filters }) {
 
-    // ================= DUMMY DATA =================
-    const dummyUsers = users && users.length > 0 ? users : [
-        { id: 1, name: 'Eneh Mercy', nip: '703703', email: 'michelle.rivera@example.com', department: 'Operasional', phone: '0812-3456-7890', photo: 'https://i.pravatar.cc/150?img=1', role: 'Staff Lapangan', about: 'Staff lapangan di bagian Operasional Panas Bumi. Bertanggung jawab atas inspeksi harian.', area: 'Site Lahendong', status: 'Aktif' },
-        { id: 2, name: 'Marvin McKinney', nip: '877037', email: 'kenzi.lawson@example.com', department: 'HSSE', phone: '0857-9876-5432', photo: 'https://i.pravatar.cc/150?img=11', role: 'Safety Inspector', about: 'Mengawasi kepatuhan standar keselamatan kerja di area pembangkit listrik.', area: 'Site Kamojang', status: 'Aktif' },
-        { id: 3, name: 'Brooklyn Simmons', nip: '370357', email: 'nathan.roberts@example.com', department: 'Teknik', phone: '0811-2345-6789', photo: null, role: 'Mechanical Engineer', about: 'Fokus pada perawatan turbin dan komponen mekanis utama.', area: 'Site Ulubelu', status: 'Aktif' },
-        { id: 4, name: 'Dianne Russell', nip: '870316', email: 'felicia.reid@example.com', department: 'Operasional', phone: '0821-8765-4321', photo: 'https://i.pravatar.cc/150?img=9', role: 'Operator Shift', about: 'Memastikan operasional pembangkit berjalan mulus pada shift malam.', area: 'Site Lahendong', status: 'Cuti' },
-        { id: 5, name: 'Cody Fisher', nip: '547030', email: 'tim.jennings@example.com', department: 'HSSE', phone: '0813-5678-9012', photo: 'https://i.pravatar.cc/150?img=33', role: 'HSSE Admin', about: 'Staff lapangan di bagian Operasional Panas Bumi.', area: 'Site Lahendong', status: 'Aktif' },
-        { id: 6, name: 'Guy Hawkins', nip: '270374', email: 'alma.lawson@example.com', department: 'Operasional', phone: '0878-1098-7654', photo: 'https://i.pravatar.cc/150?img=12', role: 'Logistik', about: 'Mengatur pasokan APD dan spare part mesin.', area: 'Kantor Pusat', status: 'Aktif' },
-        { id: 7, name: 'Devon Lane', nip: '970322', email: 'debra.holt@example.com', department: 'Operasional', phone: '0896-4321-0987', photo: 'https://i.pravatar.cc/150?img=4', role: 'Operator', about: 'Operator lapangan junior.', area: 'Site Kamojang', status: 'Nonaktif' },
-    ];
-
-    // ================= STATE UTAMA =================
-    const [selectedUser, setSelectedUser] = useState(dummyUsers[4] || dummyUsers[0]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('Semua');
+    // ================= STATE UTAMA DARI SERVER =================
+    // State sekarang mengambil nilai awal dari server (bukan dummy lagi)
+    const [searchQuery, setSearchQuery] = useState(filters?.search || '');
+    const [statusFilter, setStatusFilter] = useState(filters?.status || 'Semua');
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const filterRef = useRef(null);
 
+    // Ambil data array aslinya dari dalam bungkus 'data' milik Laravel Paginator
+    const filteredUsers = users.data || [];
+
     // ================= STATE MODAL & EDIT =================
+    const [selectedUser, setSelectedUser] = useState(filteredUsers[0] || null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editData, setEditData] = useState(null);
-
-    // State Animasi Chart
     const [animateChart, setAnimateChart] = useState(false);
-
-    // State Alur OTP
     const [isOtpStep, setIsOtpStep] = useState(false);
     const [otpValues, setOtpValues] = useState(['', '', '', '', '', '']);
     const otpRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
@@ -43,12 +32,21 @@ export default function Users({ auth, users }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // ================= LOGIKA PENCARIAN & FILTER =================
-    const filteredUsers = dummyUsers.filter(user => {
-        const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || user.nip.toLowerCase().includes(searchQuery.toLowerCase()) || user.email.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === 'Semua' || user.status === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+    // ================= LOGIKA PENCARIAN OTOMATIS (DEBOUNCE) =================
+    // Setiap kali searchQuery atau statusFilter berubah, minta data baru ke Laravel
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            // Cek apakah nilainya benar-benar berubah dari props awal agar tidak looping
+            if (searchQuery !== (filters?.search || '') || statusFilter !== (filters?.status || 'Semua')) {
+                router.get(route('users.index'), { search: searchQuery, status: statusFilter }, {
+                    preserveState: true, // Biar state pop-up/pilihan user gak keriset
+                    preserveScroll: true, // Biar layar gak lompat
+                    replace: true // Gak nambahin history browser back
+                });
+            }
+        }, 300); // Tunggu 300ms setelah selesai ngetik
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery, statusFilter]);
 
     // ================= HANDLER INTERAKSI =================
     const handleDoubleClick = (user) => {
@@ -57,24 +55,35 @@ export default function Users({ auth, users }) {
         setIsModalOpen(true);
         setIsOtpStep(false);
         setAnimateChart(false);
-
-        // Trigger animasi chart setelah modal terbuka
         setTimeout(() => setAnimateChart(true), 150);
     };
 
     const handleSaveClick = () => {
-        // Jika email diubah, paksa masuk ke mode OTP
+        // 1. VALIDASI DOMAIN EMAIL
+        const emailInput = editData.email.toLowerCase();
+        const isValidDomain = emailInput.endsWith('@pertamina.com') || emailInput.endsWith('@mk.pertamina.com');
+
+        if (!isValidDomain) {
+            alert('GAGAL: Alamat email wajib menggunakan domain resmi (@pertamina.com atau @mk.pertamina.com)!');
+            return;
+        }
+
+        // 2. CEK APAKAH EMAIL BERUBAH
         if (editData.email !== selectedUser.email) {
-            setIsOtpStep(true);
+
+            // Simulasi tembak API ke Laravel: Kirim OTP ke email BARU milik Karyawan
+            alert(`OTP Verifikasi telah dikirim ke email baru: ${editData.email}`);
+            setIsOtpStep(true); // Pindah ke layar OTP
+
         } else {
-            // JIKA HANYA UBAH STATUS: Kirim ke Database Backend
+            // JIKA HANYA UBAH STATUS
             router.put(route('users.update', editData.id), {
                 status: editData.status
             }, {
-                preserveScroll: true, // Biar layar gak lompat ke atas
+                preserveScroll: true,
                 onSuccess: () => {
                     setIsModalOpen(false);
-                    alert('Status berhasil diperbarui di database!');
+                    alert('Status karyawan berhasil diperbarui!');
                 }
             });
         }
@@ -85,29 +94,24 @@ export default function Users({ auth, users }) {
         const newOtpValues = [...otpValues];
         newOtpValues[index] = value;
         setOtpValues(newOtpValues);
-
         if (value !== '' && index < 5) otpRefs[index + 1].current.focus();
     };
 
     const handleVerifyOtp = () => {
         const otpCode = otpValues.join('');
         if (otpCode.length === 6) {
-            // JIKA EMAIL DIUBAH (DAN OTP SUDAH DIISI): Kirim ke Backend
             router.put(route('users.update', editData.id), {
                 email: editData.email,
                 status: editData.status,
-                otp: otpCode // Kirim OTP agar divalidasi oleh sistem Laravel
+                otp: otpCode
             }, {
                 preserveScroll: true,
                 onSuccess: () => {
                     setIsModalOpen(false);
-                    setOtpValues(['', '', '', '', '', '']); // Reset OTP
+                    setOtpValues(['', '', '', '', '', '']);
                     alert('Email dan status berhasil diperbarui!');
                 },
-                onError: (errors) => {
-                    // Jika OTP salah, Laravel akan mengirim pesan error ke sini
-                    alert(errors.otp || 'Terjadi kesalahan saat menyimpan data.');
-                }
+                onError: (errors) => alert(errors.otp || 'Terjadi kesalahan saat menyimpan data.')
             });
         } else {
             alert("Harap isi 6 digit OTP!");
@@ -118,12 +122,17 @@ export default function Users({ auth, users }) {
         <AdminLayout user={auth?.user}>
             <Head title="Data Pengguna" />
 
+            <div className="w-full mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <h1 className="text-[28px] font-bold text-gray-800 tracking-tight mb-2">Data Pengguna</h1>
+                <p className="text-sm text-gray-500 max-w-2xl leading-relaxed">
+                    Kelola informasi profil, pantau statistik peminjaman, dan atur status akses karyawan ke sistem HSSE.
+                </p>
+            </div>
+
             <div className="w-full flex flex-col xl:flex-row gap-8 pb-10">
 
                 {/* ================= AREA KIRI: TABEL ================= */}
-                <div className="flex-1 min-w-0 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <h1 className="text-[28px] font-bold text-gray-800 tracking-tight mb-6">Data Pengguna</h1>
-
+                <div className="flex-1 min-w-0 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 delay-75">
                     <div className="bg-transparent border-t border-b sm:border border-gray-100 sm:bg-white sm:rounded-[24px] sm:shadow-sm overflow-hidden flex-1 flex flex-col">
 
                         {/* TOOLBAR INTERAKTIF */}
@@ -228,12 +237,30 @@ export default function Users({ auth, users }) {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* ================= AREA PAGINASI (TOMBOL HALAMAN BARU) ================= */}
+                        <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+                            <span className="text-xs text-gray-500 font-medium">
+                                Menampilkan {users.from || 0} - {users.to || 0} dari total {users.total} Karyawan
+                            </span>
+                            <div className="flex space-x-1">
+                                {users.links.map((link, idx) => (
+                                    <Link
+                                        key={idx}
+                                        href={link.url || '#'}
+                                        preserveScroll
+                                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${!link.url ? 'text-gray-300 cursor-not-allowed' : link.active ? 'bg-[#21409A] text-white shadow-md' : 'text-gray-600 hover:bg-gray-200'} `}
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                {/* ================= AREA KANAN: KARTU PROFIL (Dikembalikan Sepenuhnya) ================= */}
+                {/* ================= AREA KANAN: KARTU PROFIL ================= */}
                 <div className="w-full xl:w-[320px] shrink-0 animate-in fade-in slide-in-from-right-8 duration-500 delay-150 fill-mode-both">
-                    <div className="h-0 xl:h-[56px]"></div>
                     <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-8 flex flex-col items-center sticky top-24 transition-all">
 
                         <p className="text-sm font-semibold text-gray-500 mb-4">{selectedUser?.nip || '-'}</p>
@@ -268,10 +295,13 @@ export default function Users({ auth, users }) {
                         </div>
 
                         <div className="w-full flex justify-between text-left">
+                            {/* 👇 INI YANG DIUBAH MENJADI NOMOR TELEPON 👇 */}
                             <div>
-                                <h4 className="text-[11px] font-bold text-gray-800 mb-1">Area Kerja</h4>
-                                <p className="text-xs text-gray-400 font-medium">{selectedUser?.area || '-'}</p>
+                                <h4 className="text-[11px] font-bold text-gray-800 mb-1">Nomor Telepon</h4>
+                                <p className="text-xs text-gray-400 font-medium">{selectedUser?.phone || 'Belum diisi'}</p>
                             </div>
+                            {/* 👆 ===================================== 👆 */}
+
                             <div className="text-right">
                                 <h4 className="text-[11px] font-bold text-gray-800 mb-1">Status Akun</h4>
                                 <p className={`text-xs font-bold ${selectedUser?.status === 'Aktif' ? 'text-green-500' : selectedUser?.status === 'Cuti' ? 'text-amber-500' : 'text-red-400'}`}>{selectedUser?.status || '-'}</p>
@@ -308,17 +338,15 @@ export default function Users({ auth, users }) {
 
                             <h2 className="text-xl font-bold text-gray-900">{editData.name}</h2>
 
-                            {/* 👇 LOGIKA TITIK DEPARTEMEN DIPERBAIKI 👇 */}
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
                                 {editData.nip} {editData.department ? '• ' + editData.department : ''}
                             </p>
 
                             <div className="w-full h-px bg-gray-200 my-6"></div>
 
-                            {/* CUSTOM CHART: MODERN HORIZONTAL PROGRESS BAR (SEKARANG DINAMIS!) */}
+                            {/* CUSTOM CHART: MODERN HORIZONTAL PROGRESS BAR */}
                             <div className="w-full">
                                 {(() => {
-                                    // Kalkulasi matematika agar persentase akurat dan sistem tidak error saat dibagi nol (0)
                                     const total = editData.total_borrow || 0;
                                     const onTime = editData.on_time || 0;
                                     const late = editData.late || 0;
@@ -333,7 +361,6 @@ export default function Users({ auth, users }) {
                                             </div>
 
                                             <div className="space-y-5">
-                                                {/* Bar Tepat Waktu */}
                                                 <div className="group">
                                                     <div className="flex justify-between text-xs font-bold mb-2">
                                                         <span className="text-gray-500 flex items-center gap-1.5">
@@ -344,13 +371,11 @@ export default function Users({ auth, users }) {
                                                     </div>
                                                     <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                                                         <div className="h-full bg-[#00A651] rounded-full transition-all duration-1000 ease-out relative overflow-hidden" style={{ width: animateChart ? `${onTimePct}%` : '0%' }}>
-                                                            {/* Efek kilap (Shimmer) */}
                                                             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                {/* Bar Terlambat */}
                                                 <div className="group">
                                                     <div className="flex justify-between text-xs font-bold mb-2">
                                                         <span className="text-gray-500 flex items-center gap-1.5">
@@ -372,19 +397,17 @@ export default function Users({ auth, users }) {
 
                         {/* Kolom Kanan: Form Edit & OTP */}
                         <div className="w-full md:w-7/12 p-8 relative flex flex-col">
-                            {/* Tombol Tutup */}
                             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex justify-center items-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
 
                             {!isOtpStep ? (
-                                /* STATE 1: FORM EDIT DATA */
                                 <div className="flex-1 animate-in fade-in duration-300">
                                     <h2 className="text-xl font-bold text-gray-900 mb-6">Edit Akses & Status</h2>
 
                                     <div className="space-y-5">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Alamat Email Login</label>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Alamat Email</label>
                                             <input
                                                 type="email"
                                                 value={editData.email}
@@ -421,13 +444,14 @@ export default function Users({ auth, users }) {
                                     </div>
                                 </div>
                             ) : (
-                                /* STATE 2: PROSES OTP */
                                 <div className="flex-1 flex flex-col justify-center items-center text-center animate-in slide-in-from-right-8 duration-300">
                                     <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex justify-center items-center mb-6">
                                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                                     </div>
                                     <h2 className="text-xl font-bold text-gray-900 mb-2">Verifikasi Keamanan</h2>
-                                    <p className="text-sm text-gray-500 mb-8 max-w-sm">Anda akan mengubah email pengguna ini. Masukkan 6-digit OTP otorisasi Admin yang dikirim ke perangkat Anda.</p>
+                                    <p className="text-sm text-gray-500 mb-8 max-w-sm">
+                                        Kode OTP 6-digit telah dikirim ke email baru <span className="font-bold text-[#21409A]">{editData.email}</span>. Minta pengguna untuk memeriksa kotak masuknya untuk membuktikan kepemilikan email.
+                                    </p>
 
                                     <div className="flex gap-2 justify-center mb-8">
                                         {otpValues.map((val, index) => (

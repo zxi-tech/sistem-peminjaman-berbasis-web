@@ -10,23 +10,37 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    // 1. MUNCULKAN HALAMAN DAFTAR USER & DATA GRAFIK
-    public function index()
+    // 1. MUNCULKAN HALAMAN DAFTAR USER (DENGAN PAGINASI & FILTER)
+    public function index(Request $request)
     {
-        // Ambil semua data user beserta total transaksi mereka
-        // Kita juga mengambil perhitungan jumlah transaksi "tepat waktu" dan "terlambat"
-        $users = User::withCount('transactions')
-            ->withCount(['transactions as on_time_count' => function ($query) {
-                // Asumsi: Jika statusnya selesai dan tidak ada 'notes' denda/terlambat, berarti tepat waktu
-                $query->where('status', 'selesai')->whereNull('notes');
+        // Siapkan kerangka query dasar
+        $query = User::withCount('transactions')
+            ->withCount(['transactions as on_time_count' => function ($q) {
+                $q->where('status', 'selesai')->whereNull('notes');
             }])
-            ->withCount(['transactions as late_count' => function ($query) {
-                // Asumsi: Status terlambat atau selesai tapi punya catatan 'terlambat'
-                $query->where('status', 'terlambat')->orWhere('notes', 'LIKE', '%terlambat%');
-            }])
-            ->latest()
-            ->get()
-            ->map(function ($user) {
+            ->withCount(['transactions as late_count' => function ($q) {
+                $q->where('status', 'terlambat')->orWhere('notes', 'LIKE', '%terlambat%');
+            }]);
+
+        // FITUR PENCARIAN (Cari Nama, NIP, atau Email)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('nip', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // FITUR FILTER STATUS
+        if ($request->filled('status') && $request->status !== 'Semua') {
+            $query->where('status', $request->status);
+        }
+
+        // EKSEKUSI: Ambil data, potong 7 per halaman, lalu format datanya
+        $users = $query->latest()
+            ->paginate(7)
+            ->through(function ($user) {
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -35,19 +49,21 @@ class UserController extends Controller
                     'department' => $user->department,
                     'phone' => $user->phone,
                     'photo' => $user->photo,
-                    'status' => $user->status ?? 'Aktif', // Default Aktif jika kolom status belum ada
-                    'about' => $user->about ?? 'Karyawan PGE Site Lahendong.',
+                    'status' => $user->status ?? 'Aktif',
+                    'about' => $user->about ?? 'Belum ada deskripsi profil untuk pengguna ini.',
                     'area' => $user->area ?? 'Site Lahendong',
 
-                    // Data asli untuk dikirim ke Grafik React
                     'total_borrow' => $user->transactions_count,
                     'on_time' => $user->on_time_count,
                     'late' => $user->late_count,
                 ];
-            });
+            })
+            ->withQueryString(); // Memastikan saat pindah halaman, kata kunci pencarian tidak hilang
 
+        // Kirim data pengguna dan parameter filter yang sedang aktif ke React
         return Inertia::render('Dashboard/Users', [
-            'users' => $users
+            'users' => $users,
+            'filters' => $request->only(['search', 'status'])
         ]);
     }
 

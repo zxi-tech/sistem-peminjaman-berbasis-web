@@ -25,7 +25,7 @@ export default function Contact({ auth }) {
     };
 
     // ================= FORM LOGIC =================
-    const { data, setData, post, processing, reset } = useForm({
+    const { data, setData, post, processing, reset, errors } = useForm({
         name: user?.name || '',
         email: user?.email || '',
         subject: '',
@@ -36,10 +36,16 @@ export default function Contact({ auth }) {
 
     const submit = (e) => {
         e.preventDefault();
-        // Simulasi pengiriman pesan (Nanti bisa disambungkan ke controller Laravel)
-        setIsSent(true);
-        reset('subject', 'message');
-        setTimeout(() => setIsSent(false), 5000);
+
+        // MENGIRIM DATA KE LARAVEL
+        post(route('contact.store'), {
+            preserveScroll: true, // Layar tidak lompat ke atas
+            onSuccess: () => {
+                setIsSent(true); // Tampilkan pesan sukses
+                reset('subject', 'message'); // Kosongkan form isian
+                setTimeout(() => setIsSent(false), 5000); // Hilangkan notif setelah 5 detik
+            }
+        });
     };
 
     return (

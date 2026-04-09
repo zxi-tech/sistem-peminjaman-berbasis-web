@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 
 export default function AdminLayout({ user, children }) {
     // ================= STATES INTERAKTIVITAS =================
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const profileMenuRef = useRef(null);
+
+    // 👇 TANGKAP DATA GLOBAL DARI LARAVEL DI SINI 👇
+    const { unread_messages_count } = usePage().props;
 
     // Fungsi untuk mengecek halaman yang sedang aktif
     const isRouteActive = (pattern) => route().current(pattern);
@@ -104,6 +107,32 @@ export default function AdminLayout({ user, children }) {
                         {!isSidebarCollapsed && <span className="whitespace-nowrap">Riwayat</span>}
                     </Link>
 
+                    {/* 👇 MENU PESAN MASUK DENGAN NOTIFIKASI DINAMIS 👇 */}
+                    <Link
+                        href={route('messages.index')}
+                        title="Pesan Masuk"
+                        className={`flex items-center justify-between py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200 ${isSidebarCollapsed ? 'justify-center px-0' : 'px-3'} ${isRouteActive('messages.*') ? 'bg-[#00A651] text-white shadow-md shadow-[#00A651]/30' : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="relative shrink-0 flex items-center justify-center">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+
+                                {/* Badge Notifikasi ketika Sidebar dilipat (Collapsed) */}
+                                {isSidebarCollapsed && unread_messages_count > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white"></span>
+                                )}
+                            </div>
+                            {!isSidebarCollapsed && <span className="whitespace-nowrap">Pesan Masuk</span>}
+                        </div>
+
+                        {/* Angka Notifikasi ketika Sidebar terbuka lebar */}
+                        {!isSidebarCollapsed && unread_messages_count > 0 && (
+                            <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                                {unread_messages_count > 99 ? '99+' : unread_messages_count}
+                            </span>
+                        )}
+                    </Link>
+
                 </nav>
 
                 {/* Area Logout */}
@@ -127,7 +156,7 @@ export default function AdminLayout({ user, children }) {
                 {/* Header Top Ala Template Premium */}
                 <header className="h-[72px] bg-white border-b border-gray-100 flex items-center justify-between px-8 z-10 flex-shrink-0">
 
-                    {/* Kiri: Mockup Search Bar (Diberi Fungsi Alert) */}
+                    {/* Kiri: Mockup Search Bar */}
                     <div
                         onClick={() => handleComingSoon("Pencarian Global (Ctrl+/)")}
                         className="flex items-center text-gray-400 hover:text-[#00A651] cursor-pointer transition-colors p-2 -ml-2 rounded-lg"
@@ -139,7 +168,7 @@ export default function AdminLayout({ user, children }) {
                     {/* Kanan: Icons & Profile */}
                     <div className="flex items-center space-x-6">
 
-                        {/* Kumpulan Ikon Mockup (Diberi Fungsi Alert) */}
+                        {/* Kumpulan Ikon Mockup */}
                         <div className="hidden sm:flex items-center space-x-4 text-gray-500">
                             <button onClick={() => handleComingSoon("Terjemahan (Translate)")} className="hover:text-[#00A651] transition-colors p-1.5 rounded-lg hover:bg-green-50" title="Translate">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
@@ -147,9 +176,13 @@ export default function AdminLayout({ user, children }) {
                             <button onClick={() => handleComingSoon("Mode Gelap (Dark Mode)")} className="hover:text-[#00A651] transition-colors p-1.5 rounded-lg hover:bg-green-50" title="Dark Mode">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                             </button>
-                            <button onClick={() => handleComingSoon("Pusat Notifikasi")} className="hover:text-[#00A651] transition-colors relative p-1.5 rounded-lg hover:bg-green-50" title="Notifikasi">
+
+                            {/* Ikon Lonceng Notifikasi yang juga menyala kalau ada pesan masuk */}
+                            <button onClick={() => router.get(route('messages.index'))} className="hover:text-[#00A651] transition-colors relative p-1.5 rounded-lg hover:bg-green-50" title="Notifikasi Pesan">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                                <span className="absolute top-1 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                                {unread_messages_count > 0 && (
+                                    <span className="absolute top-1 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                                )}
                             </button>
                         </div>
 
@@ -163,7 +196,6 @@ export default function AdminLayout({ user, children }) {
                                 className={`flex items-center space-x-3 cursor-pointer p-1.5 rounded-lg transition-colors ${isProfileMenuOpen ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
                             >
                                 <div className="relative">
-                                    {/* Menampilkan Foto Jika Ada, Jika Tidak Ada Munculkan Inisial */}
                                     <div className="h-9 w-9 rounded-full bg-[#00A651] flex items-center justify-center text-white font-bold text-xs border border-gray-200 overflow-hidden shadow-sm">
                                         {user?.photo ? (
                                             <img
@@ -171,27 +203,22 @@ export default function AdminLayout({ user, children }) {
                                                 alt={user?.name}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
-                                                    // Jika foto gagal dimuat, sembunyikan gambar dan tampilkan inisial
                                                     e.target.onerror = null;
                                                     e.target.style.display = 'none';
                                                     e.target.nextSibling.style.display = 'flex';
                                                 }}
                                             />
                                         ) : null}
-
-                                        {/* Inisial Cadangan */}
                                         <span className={`w-full h-full flex items-center justify-center ${user?.photo ? 'hidden' : ''}`}>
                                             {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                                         </span>
                                     </div>
-                                    {/* Titik Hijau Status Online */}
                                     <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></span>
                                 </div>
                                 <div className="hidden md:flex flex-col text-left">
                                     <span className="text-[13px] font-bold text-gray-800 leading-tight">{user?.name || 'HSSE'}</span>
                                     <span className="text-[11px] text-gray-500 capitalize leading-tight">{user?.role || 'Admin'}</span>
                                 </div>
-                                {/* Ikon Panah Bawah */}
                                 <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
 
@@ -223,18 +250,14 @@ export default function AdminLayout({ user, children }) {
                     </div>
                 </header>
 
-                {/* Main Content Area: Diubah menjadi flex-col agar footer selalu di bawah */}
+                {/* Main Content Area */}
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#F4F5FA] flex flex-col">
-
-                    {/* Wadah Konten Utama */}
                     <div className="flex-1 p-6 lg:p-8">
                         {children}
                     </div>
 
                     {/* ================= FOOTER AREA ================= */}
                     <footer className="mt-auto flex-shrink-0 bg-[#F4F5FA]">
-
-                        {/* Teks Copyright & Link */}
                         <div className="px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center text-[13px] text-gray-500 font-medium">
                             <div>
                                 © 2026, Sistem Peminjaman HSSE - PT Pertamina Geothermal Energy Tbk.
@@ -246,11 +269,10 @@ export default function AdminLayout({ user, children }) {
                             </div>
                         </div>
 
-                        {/* Garis Multi-Warna di Ujung Bawah */}
                         <div className="h-1.5 flex w-full">
-                            <div className="bg-[#21409A] flex-1"></div> {/* Biru Pertamina */}
-                            <div className="bg-[#ED1C24] flex-1"></div> {/* Merah Pertamina */}
-                            <div className="bg-[#FBBF24] flex-1"></div> {/* Kuning / Gold */}
+                            <div className="bg-[#21409A] flex-1"></div>
+                            <div className="bg-[#ED1C24] flex-1"></div>
+                            <div className="bg-[#FBBF24] flex-1"></div>
                         </div>
                     </footer>
                 </main>

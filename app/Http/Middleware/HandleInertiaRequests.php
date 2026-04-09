@@ -34,6 +34,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // 👇 INI BARIS AJAIBNYA 👇
+            'unread_messages_count' => \App\Models\ContactMessage::where('is_read', false)->count(),
         ];
     }
 }
