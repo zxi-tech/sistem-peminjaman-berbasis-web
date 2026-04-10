@@ -132,18 +132,25 @@ export default function Contact({ auth }) {
                         {/* Area Kiri: Info Kontak */}
                         <div className="lg:col-span-5 space-y-6">
 
-                            {/* Kartu Alamat Utama */}
-                            <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] hover:border-blue-100 transition-colors group">
+                            {/* Kartu Alamat Utama (Sekarang Bisa Diklik ke Google Maps) */}
+                            <a
+                                href="https://www.google.com/maps/search/?api=1&query=PT.+Pertamina+Geothermal+Energy+Area+Lahendong,+Tomohon"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block bg-white p-8 rounded-[24px] border border-gray-100 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-pointer"
+                            >
                                 <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#21409A] transition-colors">
                                     <svg className="w-6 h-6 text-[#21409A] group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 </div>
-                                <h3 className="text-lg font-black text-gray-900 mb-2">Kantor Pusat</h3>
+                                <h3 className="text-lg font-black text-gray-900 mb-2">
+                                    PT. Pertamina Geothermal Energy<br />Area Lahendong
+                                </h3>
                                 <p className="text-sm text-gray-500 leading-relaxed font-medium">
-                                    Grha Pertamina, Gedung Pertamax Lt. 10<br />
-                                    Jl. Medan Merdeka Timur No. 11-13<br />
-                                    Jakarta Pusat 10110, Indonesia
+                                    Kelurahan Tondangow, Kecamatan Tomohon Selatan<br />
+                                    Kota Tomohon, Sulawesi Utara 95438<br />
+                                    Indonesia
                                 </p>
-                            </div>
+                            </a>
 
                             {/* GRID 2x2 UNTUK WA & EMAIL */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -151,36 +158,48 @@ export default function Contact({ auth }) {
                                 {/* WA 1 - Operasional */}
                                 <a href="https://wa.me/6281234567890" target="_blank" rel="noreferrer" className="bg-white p-5 rounded-[20px] border border-gray-100 shadow-sm hover:border-green-300 hover:shadow-md transition-all group block">
                                     <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center mb-3 group-hover:bg-[#00A651] transition-colors">
-                                        <svg className="w-5 h-5 text-[#00A651] group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                        {/* Ikon Resmi WhatsApp */}
+                                        <svg className="w-5 h-5 text-[#00A651] group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                                        </svg>
                                     </div>
-                                    <h3 className="text-[13px] font-bold text-gray-900 mb-1">WA HSSE (Admin)</h3>
+                                    <h3 className="text-[13px] font-bold text-gray-900 mb-1">WA Admin HSSE 1</h3>
                                     <p className="text-xs text-gray-500 font-medium">+62 812-3456-7890</p>
                                 </a>
 
                                 {/* Email 1 - Operasional */}
                                 <a href="mailto:hsse.support@pge.com" className="bg-white p-5 rounded-[20px] border border-gray-100 shadow-sm hover:border-red-300 hover:shadow-md transition-all group block">
                                     <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center mb-3 group-hover:bg-[#ED1C24] transition-colors">
-                                        <svg className="w-5 h-5 text-[#ED1C24] group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        {/* Ikon Resmi Gmail */}
+                                        <svg className="w-5 h-5 text-[#ED1C24] group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.728L12 16.64l-6.545-4.912v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" />
+                                        </svg>
                                     </div>
-                                    <h3 className="text-[13px] font-bold text-gray-900 mb-1">Email Bantuan</h3>
+                                    <h3 className="text-[13px] font-bold text-gray-900 mb-1">Email Admin HSSE 1</h3>
                                     <p className="text-[11px] text-gray-500 font-medium truncate">hsse.support@pge.com</p>
                                 </a>
 
                                 {/* WA 2 - Sistem/IT */}
                                 <a href="https://wa.me/6289876543210" target="_blank" rel="noreferrer" className="bg-white p-5 rounded-[20px] border border-gray-100 shadow-sm hover:border-green-300 hover:shadow-md transition-all group block">
                                     <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center mb-3 group-hover:bg-[#00A651] transition-colors">
-                                        <svg className="w-5 h-5 text-[#00A651] group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                        {/* Ikon Resmi WhatsApp */}
+                                        <svg className="w-5 h-5 text-[#00A651] group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                                        </svg>
                                     </div>
-                                    <h3 className="text-[13px] font-bold text-gray-900 mb-1">WA IT (Sistem)</h3>
+                                    <h3 className="text-[13px] font-bold text-gray-900 mb-1">WA Admin IT</h3>
                                     <p className="text-xs text-gray-500 font-medium">+62 898-7654-3210</p>
                                 </a>
 
                                 {/* Email 2 - Keluhan Umum */}
                                 <a href="mailto:complaint@pge.com" className="bg-white p-5 rounded-[20px] border border-gray-100 shadow-sm hover:border-red-300 hover:shadow-md transition-all group block">
                                     <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center mb-3 group-hover:bg-[#ED1C24] transition-colors">
-                                        <svg className="w-5 h-5 text-[#ED1C24] group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        {/* Ikon Resmi Gmail */}
+                                        <svg className="w-5 h-5 text-[#ED1C24] group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.728L12 16.64l-6.545-4.912v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" />
+                                        </svg>
                                     </div>
-                                    <h3 className="text-[13px] font-bold text-gray-900 mb-1">Email Layanan</h3>
+                                    <h3 className="text-[13px] font-bold text-gray-900 mb-1">Email Admin IT</h3>
                                     <p className="text-[11px] text-gray-500 font-medium truncate">layanan@pge.com</p>
                                 </a>
 

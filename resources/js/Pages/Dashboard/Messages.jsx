@@ -66,7 +66,7 @@ export default function Messages({ auth, messages }) {
                 <div className="w-full mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <h1 className="text-[28px] font-bold text-gray-800 tracking-tight mb-2">Pesan Masuk</h1>
                     <p className="text-sm text-gray-500 max-w-2xl leading-relaxed">
-                        Pantau, cari, dan balas pertanyaan atau keluhan yang dikirimkan oleh pengguna dari halaman Contact Us.
+                        Pantau, cari, dan tinjau pertanyaan atau keluhan yang dikirimkan oleh pengguna.
                     </p>
                 </div>
 
@@ -105,16 +105,16 @@ export default function Messages({ auth, messages }) {
 
                     {/* Area Tabel (DIPERBAIKI: Jarak Antar Kolom Dirapatkan) */}
                     <div className="overflow-x-auto min-h-[400px]">
-                        <table className="w-full text-left whitespace-nowrap table-fixed min-w-[900px]">
+                        <table className="w-full text-left whitespace-nowrap table-fixed min-w-[800px]">
                             <thead>
                                 <tr className="text-gray-400 text-[11px] font-bold tracking-widest uppercase border-b border-gray-100 bg-gray-50/30">
-                                    {/* Lebar kolom kini menggunakan ukuran pasti (w-...) agar merapat ke kiri */}
-                                    <th className="px-4 py-4 w-12"></th> {/* Indikator */}
-                                    <th className="px-6 py-4 w-64">Pengirim</th> {/* Lebar dikunci ~256px */}
-                                    <th className="px-6 py-4 w-48">Subjek</th> {/* Lebar dikunci ~192px */}
-                                    <th className="px-6 py-4">Cuplikan Pesan</th> {/* Tanpa 'w-', akan rakus memakan semua sisa ruang! */}
-                                    <th className="px-6 py-4 w-40">Tanggal</th> {/* Lebar dikunci ~160px */}
-                                    <th className="px-6 py-4 w-20 text-right">Aksi</th>
+                                    {/* Ukuran lebar dikurangi dan padding diperkecil (px-4) agar makin rapat */}
+                                    <th className="px-4 py-4 w-10"></th>
+                                    <th className="px-4 py-4 w-56">Pengirim</th>
+                                    <th className="px-4 py-4 w-48">Subjek</th>
+                                    <th className="px-4 py-4">Cuplikan Pesan</th>
+                                    <th className="px-4 py-4 w-36">Tanggal</th>
+                                    <th className="px-4 py-4 w-16 text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -136,7 +136,7 @@ export default function Messages({ auth, messages }) {
                                             </td>
 
                                             {/* Nama Pengirim */}
-                                            <td className="px-6 py-4 truncate">
+                                            <td className="px-4 py-4 truncate">
                                                 <div className="flex items-center gap-3 truncate">
                                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${getAvatarColor(msg.name)}`}>
                                                         {msg.name?.charAt(0).toUpperCase() || 'U'}
@@ -149,26 +149,26 @@ export default function Messages({ auth, messages }) {
                                             </td>
 
                                             {/* Subjek */}
-                                            <td className="px-6 py-4 truncate">
+                                            <td className="px-4 py-4 truncate">
                                                 <div className={`text-[13px] truncate ${!msg.is_read ? 'font-bold text-gray-900' : 'font-semibold text-gray-600'}`}>
                                                     {msg.subject || '(Tanpa Subjek)'}
                                                 </div>
                                             </td>
 
-                                            {/* Cuplikan Pesan (Otomatis terpotong mengikuti sisa ruang) */}
-                                            <td className="px-6 py-4 truncate">
+                                            {/* Cuplikan Pesan */}
+                                            <td className="px-4 py-4 truncate">
                                                 <div className="text-[13px] text-gray-500 truncate">
                                                     {msg.message}
                                                 </div>
                                             </td>
 
                                             {/* Tanggal */}
-                                            <td className="px-6 py-4 text-xs font-medium text-gray-400 truncate">
+                                            <td className="px-4 py-4 text-xs font-medium text-gray-400 truncate">
                                                 {formatDate(msg.created_at)}
                                             </td>
 
                                             {/* Aksi (Tombol Hapus) */}
-                                            <td className="px-6 py-4 text-right">
+                                            <td className="px-4 py-4 text-right">
                                                 <button
                                                     onClick={(e) => handleDeleteMessage(e, msg.id)}
                                                     className="p-2 bg-white border border-gray-200 text-red-500 rounded-lg hover:bg-red-500 hover:text-white hover:border-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
@@ -261,8 +261,8 @@ export default function Messages({ auth, messages }) {
                             </div>
                         </div>
 
-                        {/* Footer Modal (Aksi) */}
-                        <div className="p-5 lg:px-8 lg:py-5 border-t border-gray-100 bg-white shrink-0 flex items-center justify-between">
+                        {/* Footer Modal (Aksi) - Tombol Balas dihapus, posisi tombol hapus dipindah ke kanan */}
+                        <div className="p-5 lg:px-8 lg:py-5 border-t border-gray-100 bg-white shrink-0 flex items-center justify-end">
                             <button
                                 onClick={(e) => handleDeleteMessage(e, selectedMessage.id)}
                                 className="px-5 py-2.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white text-sm font-bold rounded-xl transition-colors flex items-center gap-2"
@@ -270,14 +270,6 @@ export default function Messages({ auth, messages }) {
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 Hapus Pesan
                             </button>
-
-                            <a
-                                href={`mailto:${selectedMessage.email}?subject=Re: ${selectedMessage.subject || 'Balasan Tim HSSE PGE'}`}
-                                className="px-8 py-2.5 bg-[#21409A] hover:bg-[#1a3380] text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-                                Balas Pengirim
-                            </a>
                         </div>
 
                     </div>

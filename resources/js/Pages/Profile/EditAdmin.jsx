@@ -32,7 +32,23 @@ export default function EditAdmin({ auth, mustVerifyEmail, status }) {
 
     const submitProfile = (e) => {
         e.preventDefault();
-        // Ubah jadi POST (karena ada _method: PATCH di atas) dan tambahkan forceFormData
+
+        // 1. VALIDASI KEKOSONGAN NAMA
+        if (profileForm.data.name.trim() === '') {
+            alert('GAGAL: Nama Admin tidak boleh kosong!');
+            return;
+        }
+
+        // 2. VALIDASI DOMAIN EMAIL
+        const emailInput = profileForm.data.email.toLowerCase();
+        const isValidDomain = emailInput.endsWith('@pertamina.com') || emailInput.endsWith('@mk.pertamina.com');
+
+        if (!isValidDomain) {
+            alert('SECURITY ALERT: Alamat email Admin wajib menggunakan domain resmi perusahaan (@pertamina.com atau @mk.pertamina.com)!');
+            return; // Hentikan proses, jangan kirim ke database!
+        }
+
+        // 3. JIKA SEMUA AMAN, LANJUT SIMPAN
         profileForm.post(route('profile.update'), {
             preserveScroll: true,
             forceFormData: true,

@@ -111,15 +111,16 @@ export default function AdminLayout({ user, children }) {
                     <Link
                         href={route('messages.index')}
                         title="Pesan Masuk"
-                        className={`flex items-center justify-between py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200 ${isSidebarCollapsed ? 'justify-center px-0' : 'px-3'} ${isRouteActive('messages.*') ? 'bg-[#00A651] text-white shadow-md shadow-[#00A651]/30' : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'}`}
+                        // DIPERBAIKI: justify-between hanya aktif saat sidebar TERBUKA (px-3), berubah jadi justify-center saat DILIPAT (px-0)
+                        className={`flex items-center py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-3'} ${isRouteActive('messages.*') ? 'bg-[#00A651] text-white shadow-md shadow-[#00A651]/30' : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'}`}
                     >
                         <div className="flex items-center gap-3">
                             <div className="relative shrink-0 flex items-center justify-center">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
 
                                 {/* Badge Notifikasi ketika Sidebar dilipat (Collapsed) */}
                                 {isSidebarCollapsed && unread_messages_count > 0 && (
-                                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white"></span>
+                                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
                                 )}
                             </div>
                             {!isSidebarCollapsed && <span className="whitespace-nowrap">Pesan Masuk</span>}
@@ -132,6 +133,7 @@ export default function AdminLayout({ user, children }) {
                             </span>
                         )}
                     </Link>
+                    {/* 👆 ======================= 👆 */}
 
                 </nav>
 

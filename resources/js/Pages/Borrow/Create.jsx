@@ -329,7 +329,10 @@ export default function Create({ auth, items }) {
                             <div className="bg-white rounded-[24px] shadow-sm border border-gray-200 overflow-hidden">
                                 <div className="bg-gray-50/50 px-6 py-5 border-b border-gray-100 flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-[#21409A]">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                        {/* 👇 IKON BARU: ID Card / Name Tag Pekerja 👇 */}
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+                                        </svg>
                                     </div>
                                     <h2 className="text-lg font-bold text-gray-900">Detail Peminjam</h2>
                                 </div>
@@ -361,7 +364,12 @@ export default function Create({ auth, items }) {
                             <div className="bg-white rounded-[24px] shadow-sm border border-gray-200 overflow-hidden flex flex-col">
                                 <div className="bg-gray-50/50 px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-[#00A651]"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg></div>
+                                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-[#00A651]">
+                                            {/* 👇 IKON BARU: Clipboard Checklist 👇 */}
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                            </svg>
+                                        </div>
                                         <h2 className="text-lg font-bold text-gray-900">Pilih Barang</h2>
                                     </div>
                                     <div className="relative w-full sm:max-w-xs">
