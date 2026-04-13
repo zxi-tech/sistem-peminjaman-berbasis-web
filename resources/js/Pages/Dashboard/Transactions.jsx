@@ -3,7 +3,44 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 
 export default function Transactions({ auth, transactions }) {
-    const displayTransactions = transactions || [];
+
+    // 👇 LOGIKA BARU: Deteksi Keterlambatan Otomatis 👇
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset jam agar akurat per hari
+
+    const displayTransactions = (transactions || []).map(trx => {
+        let currentStatus = trx.status?.toLowerCase();
+
+        if (currentStatus === 'dipinjam') {
+            let endDate = null;
+
+            // 1. Coba baca dari trx.end_date jika Laravel mengirimkannya
+            if (trx.end_date) {
+                endDate = new Date(trx.end_date);
+            }
+            // 2. Jika tidak ada, KITA BEDAH teks trx.dates (Contoh: "10 Apr 2026 - 12 Apr 2026")
+            else if (trx.dates && trx.dates.includes(' - ')) {
+                const textTanggalKembali = trx.dates.split(' - ')[1]; // Ambil teks setelah " - "
+                endDate = new Date(textTanggalKembali);
+            }
+
+            // 3. Jika berhasil menjadi format Waktu/Tanggal yang sah, kita bandingkan!
+            if (endDate && !isNaN(endDate.getTime())) {
+                endDate.setHours(0, 0, 0, 0);
+
+                // Jika hari ini LEBIH BESAR (lewat) dari tanggal kembali, jadikan terlambat
+                if (today > endDate) {
+                    currentStatus = 'terlambat';
+                }
+            }
+        }
+
+        return {
+            ...trx,
+            status: currentStatus
+        };
+    });
+    // 👆 ============================================== 👆
 
     const [activeTab, setActiveTab] = useState('semua');
     const [selectedTrx, setSelectedTrx] = useState(null);
@@ -32,7 +69,6 @@ export default function Transactions({ auth, transactions }) {
     };
 
     // KONEKSI ASLI KE BACKEND LARAVEL
-    // Kita gunakan raw_id (angka asli seperti 1, 2, 3) untuk update ke database
     const handleAction = (e, actionType) => {
         e.preventDefault();
 
@@ -45,6 +81,7 @@ export default function Transactions({ auth, transactions }) {
         });
     };
 
+    // Filter transaksi berdasarkan tab yang aktif
     const filteredTransactions = displayTransactions.filter(trx => {
         if (activeTab === 'semua') return true;
         return trx.status === activeTab;
@@ -127,7 +164,6 @@ export default function Transactions({ auth, transactions }) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                {/* Panggil trx.name secara langsung */}
                                                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 border border-gray-200 flex items-center justify-center font-bold text-xs shrink-0 group-hover:from-[#00A651]/10 group-hover:to-[#00A651]/20 group-hover:text-[#00A651] transition-all duration-300">{getInitials(trx.name)}</div>
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold text-gray-800">{trx.name}</span>
@@ -136,11 +172,9 @@ export default function Transactions({ auth, transactions }) {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                                            {/* Panggil trx.items secara langsung */}
                                             <div className="truncate max-w-[200px]">{trx.items}</div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                                            {/* Panggil trx.dates secara langsung */}
                                             {trx.dates}
                                         </td>
                                         <td className="px-6 py-4 text-center">{getStatusBadge(trx.status)}</td>
