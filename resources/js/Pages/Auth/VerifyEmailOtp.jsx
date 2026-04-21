@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 
-export default function VerifyEmailOtp({ email, testing_otp }) {
+export default function VerifyEmailOtp({ email }) {
     const { data, setData, post, processing, errors } = useForm({
         otp: '',
     });
@@ -86,13 +86,6 @@ export default function VerifyEmailOtp({ email, testing_otp }) {
                     Kami telah mengirimkan kode verifikasi ke email Anda. Masukkan kode tersebut pada kolom di bawah ini. <br />
                     <strong className="text-gray-900 mt-1 inline-block">{email}</strong>
                 </p>
-
-                {/* INFO TESTING DEV */}
-                {testing_otp && (
-                    <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-700 text-xs font-bold font-mono text-center">
-                        [MODE DEV] Kode OTP Anda: {testing_otp}
-                    </div>
-                )}
 
                 <form onSubmit={submit} className="flex flex-col">
 

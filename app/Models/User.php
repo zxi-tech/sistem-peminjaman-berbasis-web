@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail; // <-- 1. MANTRA PANGGIL SATPAM (WAJIB ADA)
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+// 👇 2. PASANG TANDA PENGENAL 'implements MustVerifyEmail' DI SINI 👇
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 

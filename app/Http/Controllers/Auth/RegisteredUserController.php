@@ -42,7 +42,7 @@ class RegisteredUserController extends Controller
                 'email',
                 'max:255',
                 'unique:users,email',
-                'ends_with:@pertamina.com,@mitrakerja.pertamina.com' // <-- Gembok Domain
+                'ends_with:@pertamina.com,@mitrakerja.pertamina.com'
             ],
             'phone' => 'required|string|max:255|unique:users,phone',
             'department' => 'required|string|max:255',
@@ -75,6 +75,6 @@ class RegisteredUserController extends Controller
         \Illuminate\Support\Facades\Auth::login($user);
 
         // 5. JANGAN KE DASHBOARD! Arahkan paksa ke Halaman Verifikasi Email
-        return redirect()->route('otp.email.view');
+        return redirect()->route('verification.notice');
     }
 }

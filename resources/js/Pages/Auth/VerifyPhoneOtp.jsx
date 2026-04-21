@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 
-export default function VerifyPhoneOtp({ phone, testing_otp }) {
+export default function VerifyPhoneOtp({ phone }) {
     const { data, setData, post, processing, errors } = useForm({
         otp: '',
     });
@@ -88,7 +88,7 @@ export default function VerifyPhoneOtp({ phone, testing_otp }) {
                     <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Verifikasi WhatsApp</h1>
                     {/* SVG WhatsApp/Chat Icon */}
                     <svg className="h-6 w-6 text-[#00A651]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2-2v14a2 2 0 002 2z"></path>
                     </svg>
                 </div>
 
@@ -96,13 +96,6 @@ export default function VerifyPhoneOtp({ phone, testing_otp }) {
                 <p className="text-sm text-gray-600 font-medium leading-relaxed mb-8">
                     Kami telah mengirimkan pesan berisi kode verifikasi ke nomor WhatsApp Anda. Masukkan kode tersebut pada kolom di bawah ini. <strong className="text-gray-900">{phone}</strong>
                 </p>
-
-                {/* INFO TESTING DEV */}
-                {testing_otp && (
-                    <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-700 text-xs font-bold font-mono text-center">
-                        [MODE DEV] Kode OTP WA Anda: {testing_otp}
-                    </div>
-                )}
 
                 <form onSubmit={submit} className="flex flex-col">
 
