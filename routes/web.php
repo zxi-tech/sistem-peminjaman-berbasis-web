@@ -7,6 +7,7 @@ use App\Http\Controllers\BorrowController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\OtpController;
+use App\Http\Controllers\IncomingItemController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -39,6 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/verify-email-otp', [OtpController::class, 'verifyEmail'])->name('otp.email.verify');
     Route::get('/verify-whatsapp-otp', [OtpController::class, 'verifyPhoneView'])->name('otp.phone.view');
     Route::post('/verify-whatsapp-otp', [OtpController::class, 'verifyPhone'])->name('otp.phone.verify');
+    // Rute untuk Manajemen Barang Masuk
+    Route::get('/admin/incoming-items', [IncomingItemController::class, 'index'])->name('admin.incoming-items.index');
+    Route::post('/admin/incoming-items', [IncomingItemController::class, 'store'])->name('admin.incoming-items.store');
 });
 
 

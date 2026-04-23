@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, router } from '@inertiajs/react'; // <-- Tambah router di sini
+import { Link } from '@inertiajs/react';
 
 export default function Items({ auth, items }) {
 
@@ -102,12 +103,25 @@ export default function Items({ auth, items }) {
                         Manajemen Barang
                     </h1>
 
-                    <button
-                        onClick={openCreateModal}
-                        className="bg-[#00A651] hover:bg-[#008c44] text-white px-5 py-2 rounded-full text-[11px] font-bold shadow-sm hover:shadow-md transition-all uppercase tracking-wider"
-                    >
-                        + Tambah Barang
-                    </button>
+                    {/* Wrapper flex agar kedua tombol berjajar rapi */}
+                    <div className="flex items-center gap-2">
+                        <Link
+                            href={route('admin.incoming-items.index')}
+                            className="bg-[#21409A] hover:bg-[#1a3380] text-white px-5 py-2 rounded-full text-[11px] font-bold shadow-sm hover:shadow-md transition-all uppercase tracking-wider flex items-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                            Riwayat Barang Masuk
+                        </Link>
+
+                        <button
+                            onClick={openCreateModal}
+                            className="bg-[#00A651] hover:bg-[#008c44] text-white px-5 py-2 rounded-full text-[11px] font-bold shadow-sm hover:shadow-md transition-all uppercase tracking-wider"
+                        >
+                            + Tambah Barang
+                        </button>
+                    </div>
                 </div>
 
                 {/* ================= GRID DATA BARANG ================= */}

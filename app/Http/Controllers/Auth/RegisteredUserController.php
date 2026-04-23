@@ -13,6 +13,8 @@ use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Mail; // Pastikan ini ada
+use App\Mail\OtpMail; // Pastikan ini ada
 
 class RegisteredUserController extends Controller
 {
@@ -31,7 +33,7 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
-        // 👇 1. MODIFIKASI VALIDASI DENGAN PEMBATASAN DOMAIN 👇
+        // 1. Validasi
         $request->validate([
             'nip' => 'required|string|max:255|unique:users,nip',
             'name' => 'required|string|max:255',
@@ -48,33 +50,32 @@ class RegisteredUserController extends Controller
             'department' => 'required|string|max:255',
             'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
         ], [
-            // Pesan error agar React bisa menampilkannya dengan bahasa Indonesia
             'email.ends_with' => 'Pendaftaran gagal! Anda wajib menggunakan email @pertamina.com atau @mitrakerja.pertamina.com.',
         ]);
 
-        // 2. Generate 6 Digit Kode Acak untuk OTP
+        // 2. Generate OTP
         $emailOtp = rand(100000, 999999);
         $phoneOtp = rand(100000, 999999);
 
-        // 3. Simpan Data beserta OTP-nya
-        $user = \App\Models\User::create([
+        // 3. Simpan Data ke Database (Hanya 1 Kali!)
+        $user = User::create([
             'nip' => $request->nip,
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'department' => $request->department,
-            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+            'password' => Hash::make($request->password),
             'email_otp' => $emailOtp,
             'phone_otp' => $phoneOtp,
         ]);
 
-        // (Di kehidupan nyata, di sini Anda men-trigger API Email & WhatsApp untuk mengirim $emailOtp dan $phoneOtp ke user)
-        // Untuk testing, Laravel otomatis mencatat kode ini di database Anda.
+        // 4. Panggil Kurir Email
+        Mail::to($user->email)->send(new OtpMail($emailOtp));
 
-        // 4. Login user (agar sistem tahu siapa yang sedang diverifikasi)
-        \Illuminate\Support\Facades\Auth::login($user);
+        // 5. Login otomatis
+        Auth::login($user);
 
-        // 5. JANGAN KE DASHBOARD! Arahkan paksa ke Halaman Verifikasi Email
+        // 6. Arahkan ke halaman verifikasi
         return redirect()->route('verification.notice');
     }
 }

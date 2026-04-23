@@ -13,13 +13,17 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('nip')->unique(); // Tambahan: NIP Pegawai
+            $table->string('nip')->unique()->nullable(); // <-- Tambahkan ini
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('phone')->unique(); // Tambahan: Nomor WhatsApp
-            $table->enum('role', ['admin', 'user'])->default('user'); // Tambahan: Role (Admin HSSE / Pekerja)
+            $table->string('phone')->unique()->nullable(); // <-- Tambahkan ini
+            $table->string('department')->nullable();      // <-- Tambahkan ini
+            $table->string('role')->default('user');       // <-- Tambahkan ini
+            // ... (dan kolom lainnya) ...
+            $table->string('email_otp')->nullable();
+            $table->string('phone_otp')->nullable();
             $table->timestamp('email_verified_at')->nullable();
-            $table->timestamp('wa_verified_at')->nullable(); // Tambahan: Waktu verifikasi OTP WA
+            $table->timestamp('wa_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
