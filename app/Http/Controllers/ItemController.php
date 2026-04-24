@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use App\Models\ItemSize;
+use App\Models\IncomingItem; // 👈 Wajib ditambahkan untuk log otomatis
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth; // 👈 Wajib ditambahkan untuk mengambil ID Admin
 
 class ItemController extends Controller
 {
@@ -16,7 +18,6 @@ class ItemController extends Controller
      */
     public function index()
     {
-        // Ambil semua barang beserta relasi ukuran dan stoknya, urutkan dari yang terbaru
         $items = Item::with('sizes')->latest()->get();
 
         return Inertia::render('Dashboard/Items', [
@@ -29,12 +30,13 @@ class ItemController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi Data dari React
+        // 1. Tambahkan validasi warehouse di sini
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:asset,consumable',
+            'warehouse' => 'required|string|max:255', // 👈 Penambahan validasi gudang
             'description' => 'nullable|string',
-            'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048', // Wajib Foto
+            'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
             'sizes' => 'required|array|min:1',
             'sizes.*.size_name' => 'required|string|max:50',
             'sizes.*.stock' => 'required|integer|min:0',
@@ -43,27 +45,40 @@ class ItemController extends Controller
         DB::beginTransaction();
 
         try {
-            // 2. Upload Foto 
             $photoPath = null;
             if ($request->hasFile('photo')) {
                 $photoPath = $request->file('photo')->store('items', 'public');
             }
 
-            // 3. Simpan ke tabel `items`
+            // 2. Simpan nama gudang ke tabel items
             $item = Item::create([
                 'name' => $validated['name'],
                 'type' => $validated['type'],
+                'warehouse' => $validated['warehouse'], // 👈 Simpan ke database
                 'description' => $validated['description'],
                 'photo_path' => $photoPath,
             ]);
 
-            // 4. Looping & Simpan varian ukuran
             foreach ($validated['sizes'] as $size) {
                 ItemSize::create([
                     'item_id' => $item->id,
                     'size_name' => $size['size_name'],
                     'stock' => $size['stock'],
                 ]);
+
+                // Opsional: Jika saat bikin barang baru ingin langsung masuk riwayat juga
+                /*
+                if ($size['stock'] > 0) {
+                    IncomingItem::create([
+                        'item_id' => $item->id,
+                        'user_id' => Auth::id(),
+                        'quantity' => $size['stock'],
+                        'received_date' => now()->toDateString(),
+                        'warehouse' => $item->warehouse, // 👈 Ambil nama gudang dari item
+                        'notes' => "AUTO-LOG: Barang baru ditambahkan (Varian: {$size['size_name']}).",
+                    ]);
+                }
+                */
             }
 
             DB::commit();
@@ -75,20 +90,21 @@ class ItemController extends Controller
     }
 
     /**
-     * Mengupdate data barang yang sudah ada
+     * Mengupdate data barang yang sudah ada & Mencatat Jejak Otomatis
      */
     public function update(Request $request, $id)
     {
         $item = Item::findOrFail($id);
 
-        // 1. Validasi Data (Perhatikan: photo sekarang nullable/opsional)
+        // 1. Tambahkan validasi warehouse di sini
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:asset,consumable',
+            'warehouse' => 'required|string|max:255', // 👈 Penambahan validasi gudang
             'description' => 'nullable|string',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Opsional saat edit
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'sizes' => 'required|array|min:1',
-            'sizes.*.id' => 'nullable|integer', // ID opsional karena bisa jadi ada ukuran baru
+            'sizes.*.id' => 'nullable|integer',
             'sizes.*.size_name' => 'required|string|max:50',
             'sizes.*.stock' => 'required|integer|min:0',
         ]);
@@ -96,39 +112,63 @@ class ItemController extends Controller
         DB::beginTransaction();
 
         try {
-            // 2. Cek apakah Admin mengupload foto baru
             if ($request->hasFile('photo')) {
-                // Hapus foto lama dari storage agar tidak menjadi sampah
                 if ($item->photo_path) {
                     Storage::disk('public')->delete($item->photo_path);
                 }
-                // Simpan foto baru
                 $item->photo_path = $request->file('photo')->store('items', 'public');
             }
 
-            // 3. Update data dasar barang
+            // 2. Update data gudang di database
             $item->name = $validated['name'];
             $item->type = $validated['type'];
+            $item->warehouse = $validated['warehouse']; // 👈 Update data gudang
             $item->description = $validated['description'];
             $item->save();
 
-            // 4. Kelola Varian Ukuran & Stok (Sistem Cerdas)
-            // Kumpulkan ID dari ukuran-ukuran yang dikirim oleh form React
             $submittedSizeIds = collect($validated['sizes'])->pluck('id')->filter()->toArray();
-
-            // Hapus ukuran di Database yang tidak dikirim lagi oleh form (artinya Admin menekan tombol hapus di Modal)
             $item->sizes()->whereNotIn('id', $submittedSizeIds)->delete();
 
-            // Loop data ukuran dari React: Update yang lama, dan Create yang baru
+            // 👇 INI ADALAH LOGIKA DETEKTOR JEJAK OTOMATISNYA 👇
             foreach ($validated['sizes'] as $sizeData) {
                 if (isset($sizeData['id'])) {
-                    // Jika ada ID-nya, berarti ini ukuran lama yang diubah stok/namanya
-                    ItemSize::where('id', $sizeData['id'])->update([
-                        'size_name' => $sizeData['size_name'],
-                        'stock' => $sizeData['stock'],
-                    ]);
+                    // Cek stok lama di database
+                    $oldSize = ItemSize::find($sizeData['id']);
+
+                    if ($oldSize) {
+                        $selisih = $sizeData['stock'] - $oldSize->stock;
+
+                        // Jika stok BARU lebih besar dari stok LAMA = Ada barang masuk!
+                        if ($selisih > 0) {
+                            IncomingItem::create([
+                                'item_id' => $item->id,
+                                'user_id' => Auth::id(),
+                                'quantity' => $selisih,
+                                'received_date' => now()->toDateString(),
+                                'warehouse' => $item->warehouse, // 👈 Ambil otomatis dari item yang sedang diedit
+                                'notes' => "AUTO-LOG: Edit stok varian [{$sizeData['size_name']}]. Stok awal: {$oldSize->stock}, ditambah: {$selisih}.",
+                            ]);
+                        }
+
+                        // Update datanya
+                        $oldSize->update([
+                            'size_name' => $sizeData['size_name'],
+                            'stock' => $sizeData['stock'],
+                        ]);
+                    }
                 } else {
-                    // Jika tidak ada ID-nya, berarti Admin menekan "+ Tambah Ukuran" saat proses edit
+                    // Admin menambahkan Varian Ukuran BARU saat edit barang
+                    if ($sizeData['stock'] > 0) {
+                        IncomingItem::create([
+                            'item_id' => $item->id,
+                            'user_id' => Auth::id(),
+                            'quantity' => $sizeData['stock'],
+                            'received_date' => now()->toDateString(),
+                            'warehouse' => $item->warehouse, // 👈 Ambil otomatis dari item yang sedang diedit
+                            'notes' => "AUTO-LOG: Varian baru [{$sizeData['size_name']}] ditambahkan dari menu edit.",
+                        ]);
+                    }
+
                     ItemSize::create([
                         'item_id' => $item->id,
                         'size_name' => $sizeData['size_name'],
@@ -136,6 +176,7 @@ class ItemController extends Controller
                     ]);
                 }
             }
+            // 👆 SELESAI 👆
 
             DB::commit();
             return redirect()->back()->with('success', 'Data barang berhasil diperbarui!');
@@ -146,7 +187,7 @@ class ItemController extends Controller
     }
 
     /**
-     * Menghapus data barang beserta foto dan varian ukurannya
+     * Menghapus data barang
      */
     public function destroy($id)
     {
@@ -155,15 +196,11 @@ class ItemController extends Controller
         try {
             $item = Item::findOrFail($id);
 
-            // 1. Hapus foto dari folder storage agar tidak jadi sampah
             if ($item->photo_path) {
                 Storage::disk('public')->delete($item->photo_path);
             }
 
-            // 2. Hapus semua ukuran/stok yang berelasi dengan barang ini
             $item->sizes()->delete();
-
-            // 3. Hapus data utama barang
             $item->delete();
 
             DB::commit();

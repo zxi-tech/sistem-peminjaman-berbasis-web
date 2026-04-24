@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm, router } from '@inertiajs/react'; // <-- Tambah router di sini
+import { Head, useForm, router } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
 
 export default function Items({ auth, items }) {
@@ -11,10 +11,11 @@ export default function Items({ auth, items }) {
     // State untuk menyimpan data barang yang sedang diedit (null jika mode Tambah)
     const [editingItem, setEditingItem] = useState(null);
 
-    // Tambahkan field '_method' untuk mengakali Laravel saat update file
+    // Tambahkan field '_method' dan 'warehouse'
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         name: '',
         type: 'asset',
+        warehouse: 'Gudang HSSE Utama', // <-- Default Gudang
         description: '',
         photo: null,
         sizes: [{ size_name: 'All Size', stock: 0 }],
@@ -44,10 +45,11 @@ export default function Items({ auth, items }) {
         setData({
             name: item.name,
             type: item.type,
+            warehouse: item.warehouse || 'Gudang HSSE Utama', // <-- Ambil data gudang saat edit
             description: item.description || '',
-            photo: null, // Dikosongkan agar tidak memaksa upload ulang
+            photo: null,
             sizes: item.sizes.length > 0 ? item.sizes : [{ size_name: 'All Size', stock: 0 }],
-            _method: 'PUT' // <--- Surat Rahasia untuk Laravel
+            _method: 'PUT'
         });
         setIsModalOpen(true);
     };
@@ -56,7 +58,7 @@ export default function Items({ auth, items }) {
     const handleDelete = (item) => {
         if (window.confirm(`Peringatan!\n\nApakah Anda yakin ingin menghapus barang "${item.name}" secara permanen?\nSemua data stok dan foto barang ini akan hilang dan tidak dapat dikembalikan.`)) {
             router.delete(route('items.destroy', item.id), {
-                preserveScroll: true, // Agar layar tidak lompat ke atas setelah menghapus
+                preserveScroll: true,
             });
         }
     };
@@ -64,13 +66,12 @@ export default function Items({ auth, items }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Tentukan rute: Jika ada editingItem, tembak ke route update. Jika tidak, ke route store.
         const targetRoute = editingItem
             ? route('items.update', editingItem.id)
             : route('items.store');
 
         post(targetRoute, {
-            forceFormData: true, // Wajib true agar foto bisa dikirim via POST/PUT-spoofing
+            forceFormData: true,
             onSuccess: () => closeModal(),
             onError: (err) => {
                 console.error("Error dari Laravel:", err);
@@ -103,7 +104,6 @@ export default function Items({ auth, items }) {
                         Manajemen Barang
                     </h1>
 
-                    {/* Wrapper flex agar kedua tombol berjajar rapi */}
                     <div className="flex items-center gap-2">
                         <Link
                             href={route('admin.incoming-items.index')}
@@ -136,29 +136,23 @@ export default function Items({ auth, items }) {
 
                                     <div className="h-40 bg-[#F8F9FA] p-4 flex items-center justify-center relative border-b border-gray-100">
 
-                                        <div className="absolute top-2 left-2">
-                                            <span className={`px-2 py-0.5 rounded text-[8px] font-bold text-white shadow-sm uppercase ${item.type === 'asset' ? 'bg-blue-500' : 'bg-orange-500'}`}>
+                                        <div className="absolute top-2 left-2 flex flex-col gap-1">
+                                            <span className={`px-2 py-0.5 rounded text-[8px] font-bold text-white shadow-sm uppercase w-max ${item.type === 'asset' ? 'bg-blue-500' : 'bg-orange-500'}`}>
                                                 {item.type}
                                             </span>
+                                            {/* Badge Gudang di Kartu Barang */}
+                                            {item.warehouse && (
+                                                <span className="px-2 py-0.5 rounded text-[8px] font-bold bg-gray-200 text-gray-700 shadow-sm uppercase w-max">
+                                                    {item.warehouse}
+                                                </span>
+                                            )}
                                         </div>
 
-                                        {/* TOMBOL AKSI (EDIT & HAPUS) */}
                                         <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-                                            {/* Tombol Edit */}
-                                            <button
-                                                onClick={() => openEditModal(item)}
-                                                title="Edit Barang"
-                                                className="bg-white hover:bg-[#00A651] hover:text-white text-gray-600 p-1.5 rounded-lg shadow-sm border border-gray-200 transition-colors"
-                                            >
+                                            <button onClick={() => openEditModal(item)} title="Edit Barang" className="bg-white hover:bg-[#00A651] hover:text-white text-gray-600 p-1.5 rounded-lg shadow-sm border border-gray-200 transition-colors">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                             </button>
-
-                                            {/* Tombol Hapus */}
-                                            <button
-                                                onClick={() => handleDelete(item)}
-                                                title="Hapus Barang"
-                                                className="bg-white hover:bg-red-500 hover:text-white text-gray-600 p-1.5 rounded-lg shadow-sm border border-gray-200 transition-colors"
-                                            >
+                                            <button onClick={() => handleDelete(item)} title="Hapus Barang" className="bg-white hover:bg-red-500 hover:text-white text-gray-600 p-1.5 rounded-lg shadow-sm border border-gray-200 transition-colors">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
                                         </div>
@@ -177,7 +171,6 @@ export default function Items({ auth, items }) {
                                         <h3 className="text-xs font-bold text-gray-800 mb-1 leading-tight group-hover:text-[#00A651] transition-colors line-clamp-1">
                                             {item.name}
                                         </h3>
-
                                         <p className="text-[10px] text-gray-400 mb-3 line-clamp-2 h-7 font-medium">
                                             {item.description || 'Spesifikasi material standar PGE.'}
                                         </p>
@@ -211,7 +204,6 @@ export default function Items({ auth, items }) {
                         </div>
                     )}
                 </div>
-
             </div>
 
             {/* ================= MODAL POP-UP (TAMBAH / EDIT) ================= */}
@@ -230,12 +222,15 @@ export default function Items({ auth, items }) {
 
                         <div className="p-6 overflow-y-auto">
                             <form id="itemForm" onSubmit={handleSubmit} className="space-y-5">
+
+                                {/* Grid disesuaikan untuk menampung field Gudang */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="col-span-1 md:col-span-2">
                                         <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Nama Barang *</label>
                                         <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} className={`w-full border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A651] outline-none transition-shadow`} placeholder="Contoh: Helm Safety Putih" required />
                                         {errors.name && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.name}</p>}
                                     </div>
+
                                     <div>
                                         <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Tipe Barang *</label>
                                         <select value={data.type} onChange={e => setData('type', e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A651] outline-none transition-shadow">
@@ -243,7 +238,15 @@ export default function Items({ auth, items }) {
                                             <option value="consumable">Consumable (Habis Pakai)</option>
                                         </select>
                                     </div>
+
+                                    {/* Field Gudang Baru */}
                                     <div>
+                                        <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Lokasi Gudang *</label>
+                                        <input type="text" value={data.warehouse} onChange={e => setData('warehouse', e.target.value)} className={`w-full border ${errors.warehouse ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A651] outline-none transition-shadow`} placeholder="Contoh: Gudang Area Kamojang" required />
+                                        {errors.warehouse && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.warehouse}</p>}
+                                    </div>
+
+                                    <div className="col-span-1 md:col-span-2">
                                         <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">
                                             Foto Barang {editingItem ? '(Opsional)' : '*'}
                                         </label>
@@ -252,7 +255,7 @@ export default function Items({ auth, items }) {
                                             accept="image/*"
                                             onChange={e => setData('photo', e.target.files[0])}
                                             className={`w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#00A651]/10 file:text-[#00A651] hover:file:bg-[#00A651]/20 border ${errors.photo ? 'border-red-500' : 'border-gray-300'} rounded-lg p-1 transition-colors`}
-                                            required={!editingItem} // Jika edit, tidak wajib upload foto baru
+                                            required={!editingItem}
                                         />
                                         {errors.photo && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.photo}</p>}
                                         {editingItem && editingItem.photo_path && (
